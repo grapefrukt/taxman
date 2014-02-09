@@ -1,0 +1,6 @@
+# make a copy of this file named config.ini to get started
+
+[iTunes]
+# it is a very good idea to create an account that only has access to the reports to use for this
+username: foo
+password: bar
