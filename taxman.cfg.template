@@ -4,3 +4,8 @@
 # it is a very good idea to create an account that only has access to the reports to use for this
 username: foo
 password: bar
+
+[Google Play]
+# at the end of your financal reports in the google play developer console is a gs:// url
+# your bucket id is the 20 digit number at the end of that
+bucket_id: 00000000000000000000
