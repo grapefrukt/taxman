@@ -1,3 +1,6 @@
+# Config files
+*.cfg
+
 *.py[cod]
 
 # C extensions
