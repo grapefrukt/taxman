@@ -92,15 +92,25 @@ def parse(entries) :
 
 		total_sum = sum_taxed_sales + sum_untaxed_sales + sum_tax + sum_fees + sum_tax_refund + sum_sales_refund + sum_fee_refund
 
-	#print('<h2>Sales report for Google Play Apps ' + out_filename[-6:-2] + '-' + out_filename[-2:] + '</h2>')
-	print('Taxed sales\t{0}\t{1} units'.format(sum_taxed_sales, count_taxed_sales))
-	print('Tax\t{0}'.format(sum_tax))
-	print('Untaxed sales\t{0}\t{1} units'.format(sum_untaxed_sales, count_untaxed_sales))
-	print('Google fees\t{0}'.format(sum_fees))
-	print('Refunds\t{0}\t{1} units'.format(sum_sales_refund, -count_refunds))
-	print('Tax refunds\t{0}'.format(sum_tax_refund))
-	print('Google fee refunds\t{0}'.format(sum_fee_refund))
-	print('Sum\t{0}\t{1} units'.format(total_sum, count_taxed_sales + count_untaxed_sales - count_refunds))
+		output = 'Sales report for Google Play Apps {0}-{1}\n\n'.format(entry[0], entry[1])
+
+		output += 'Taxed sales        {0}{1}\n'.format(format_currency(sum_taxed_sales), format_count(count_taxed_sales))
+		output += 'Tax                {0}\n'.format(format_currency(sum_tax))
+		output += 'Untaxed sales      {0}{1}\n'.format(format_currency(sum_untaxed_sales), format_count(count_untaxed_sales))
+		output += 'Google fees        {0}\n'.format(format_currency(sum_fees))
+		output += 'Refunds            {0}{1}\n'.format(format_currency(sum_sales_refund), format_count(-count_refunds))
+		output += 'Tax refunds        {0}\n'.format(format_currency(sum_tax_refund))
+		output += 'Google fee refunds {0}\n'.format(format_currency(sum_fee_refund))
+		output += 'Sum                {0}{1}\n'.format(format_currency(total_sum), format_count(count_taxed_sales + count_untaxed_sales - count_refunds))
+		output += '\n'
+
+		print(output)
+
+def format_currency(value) :
+	return '{:16,.2f} SEK'.format(value).replace(',', ' ')
+
+def format_count(value) :
+	return '{:10} units'.format(value)
 
 def setup() :
 	print('Downloading gsutil...')
