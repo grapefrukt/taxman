@@ -3,7 +3,7 @@ import cookielib
 from bs4 import BeautifulSoup
 import re
 
-def grab(username, password) :
+def get(username, password, dates) :
 	# Browser
 	br = mechanize.Browser(factory=mechanize.RobustFactory())
 
@@ -92,7 +92,14 @@ def parse(html) :
 			for tr in table.find_all('tr') :
 				cols = []
 				for td in tr.find_all('td') :
-					cols.append(strip_whitespace(td.text))
-				print '\t'.join(cols)
+					text = td.text
 
-		print summary
+					# if the row is the header, we replace it with a hand spaced one
+					if text == "Currency" : 
+						cols = ['Currency    Beginning   Earned      Pre-Tax     Withholding Input       Adjustments Post-Tax    FX Rate     Payment\n', '            Balance                 Subtotal    Tax         Tax                     Subtotal']
+						break
+
+					cols.append(strip_whitespace(text).ljust(12))
+				print ''.join(cols).strip()
+
+		print summary + '\n'
