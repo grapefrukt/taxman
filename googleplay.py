@@ -33,18 +33,22 @@ def get(bucket_id, dates) :
 
 		print('\tExtrating data...')
 
-		zippath = glob.glob(os.path.join('tmp', 'earnings_{0}{1}*.zip'.format(year, month)))[0]
+		try :
+			zippath = glob.glob(os.path.join('tmp', 'earnings_{0}{1}*.zip'.format(year, month)))[0]
+		except IndexError :
+			print('\tNo data found for {0}{1}'.format(year, month))
+		else :
 		
-		z = zipfile.ZipFile(zippath)
-		z.extractall('tmp')
+			z = zipfile.ZipFile(zippath)
+			z.extractall('tmp')
 
-		print('\tParsing CSV data...')
+			print('\tParsing CSV data...')
 
-		csvpath = glob.glob(os.path.join('tmp', 'PlayApps_{0}{1}*.csv'.format(year, month)))[0]
+			csvpath = glob.glob(os.path.join('tmp', 'PlayApps_{0}{1}*.csv'.format(year, month)))[0]
 
-		newdates.append(date + (open(csvpath).read(),))
+			newdates.append(date + (open(csvpath).read(),))
 
-		print('\tDone!\n')
+			print('\tDone!\n')
 
 	return newdates
 
