@@ -43,13 +43,9 @@ def get(username, password, dates) :
 
 	print('Going to report page...')
 
-	try : 
-		# find and follow the link to payments and reports
-		r = br.follow_link(text='Payments and Financial Reports')
-	except mechanize._mechanize.LinkNotFoundError :
-		print 'Could not find link to Payment Reports, username/password is probably wrong'
-		return ''
-
+	# open the link to payments and reports
+	r = br.open('https://itunesconnect.apple.com/WebObjects/iTunesConnect.woa/da/jumpTo?page=paymentsAndFinancialReports')
+		
 	# Select the first (index zero) form
 	br.select_form(nr=0)
 
