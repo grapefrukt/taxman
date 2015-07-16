@@ -28,7 +28,7 @@ def get(bucket_id, dates) :
 		month = date[1]
 
 		print('Fetching data for {0}-{1}'.format(year, month))
-		
+
 		subprocess.call('python gsutil/gsutil.py cp gs://pubsite_prod_rev_{0}/earnings/earnings_{1}{2}*.zip tmp'.format(bucket_id, year, month))
 
 		print('\tExtrating data...')
@@ -38,7 +38,7 @@ def get(bucket_id, dates) :
 		except IndexError :
 			print('\tNo data found for {0}{1}'.format(year, month))
 		else :
-		
+
 			z = zipfile.ZipFile(zippath)
 			z.extractall('tmp')
 
@@ -52,18 +52,9 @@ def get(bucket_id, dates) :
 
 	return newdates
 
-def parse(entries) : 
+def parse(entries) :
 	for entry in entries :
 		input_file = csv.DictReader(StringIO.StringIO(entry[2]))
-
-		transactions = {};
-
-		for row in input_file:
-			key = row['Description']
-			if key not in transactions:
-				transactions[key] = {'Charge' : Decimal(0), 'Google fee' : Decimal(0), 'Tax' : Decimal(0), 'Tax refund' : Decimal(0), 'Charge refund' : Decimal(0), 'Google fee refund' : Decimal(0)}
-
-			transactions[key][row['Transaction Type']] += Decimal(row['Amount (Merchant Currency)'])
 
 		count_taxed_sales = 0
 		count_untaxed_sales = 0
@@ -77,22 +68,16 @@ def parse(entries) :
 		sum_tax_refund = Decimal(0)
 		sum_sales_refund = Decimal(0)
 
-		for key, row in transactions.iteritems() :
-			if row['Tax'] > 0 :
-				sum_taxed_sales += row['Charge']
-				sum_tax += row['Tax']
+		for row in input_file:
+			if row['Transaction Type'] == 'Charge' :
 				count_taxed_sales += 1
+				sum_taxed_sales +=  Decimal(row['Amount (Merchant Currency)'])
+			elif row['Transaction Type'] == 'Google fee' :
+				sum_fees +=  Decimal(row['Amount (Merchant Currency)'])
+			elif row['Transaction Type'] == 'Tax' :
+				sum_tax +=  Decimal(row['Amount (Merchant Currency)'])
 			else :
-				sum_untaxed_sales += row['Charge']
-				count_untaxed_sales += 1
-
-			sum_fees += row['Google fee']
-			sum_fee_refund += row['Google fee refund']
-			sum_sales_refund += row['Charge refund']
-			sum_tax_refund += row['Tax refund']
-
-			if row['Google fee refund'] > 0 :
-				count_refunds += 1
+				exit('Unknown field type: ' + row['Transaction Type'])
 
 		total_sum = sum_taxed_sales + sum_untaxed_sales + sum_tax + sum_fees + sum_tax_refund + sum_sales_refund + sum_fee_refund
 
