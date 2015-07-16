@@ -3,6 +3,11 @@ import cookielib
 from bs4 import BeautifulSoup
 import re
 
+from dateutil.parser import parse as parseDate
+from datetime import *
+
+DEFAULT = datetime(2000, 01, 01)
+
 def get(username, password, dates) :
 	# Browser
 	br = mechanize.Browser(factory=mechanize.RobustFactory())
@@ -45,11 +50,11 @@ def get(username, password, dates) :
 
 	# open the link to payments and reports
 	r = br.open('https://itunesconnect.apple.com/WebObjects/iTunesConnect.woa/da/jumpTo?page=paymentsAndFinancialReports')
-		
+
 	# Select the first (index zero) form
 	br.select_form(nr=0)
 
-	# submit using the hidden Payments input (this is normally done via js, but works this way too) 
+	# submit using the hidden Payments input (this is normally done via js, but works this way too)
 	r = br.submit(label='Payments')
 
 	# grab the html
@@ -61,12 +66,14 @@ def strip_whitespace(s) :
 	# replace any whitespace with a single space, strip removes any whitespace around the string
 	return re.sub('[\t\n\r ]+', ' ', s).strip()
 
-def parse(html) :
+def parse(html, dates) :
 	# parse the html using beautiful soup
 	soup = BeautifulSoup(html)
 
 	# finds all earnings divs, they're hidden when viewing the page but always present in the html
 	months = soup.find_all('div', { 'class' : 'earnings-container'} )
+
+	output = dict()
 
 	for month in months :
 
@@ -74,6 +81,18 @@ def parse(html) :
 		summary = strip_whitespace(month.find('div', { 'class' : 'earnings-top' }).text)
 		# break the summary into three lines (using the year as an anchor)
 		summary = re.sub(' (20\d\d) ', '\g<0>\n', summary)
+
+		# parse out the report date, it uses the month name so some fancier parsing is required
+		dateText = summary.splitlines()[0]
+		dateText = re.sub('Earned ', '', dateText)
+		date = parseDate(dateText)
+
+		# with that we can now skip this month if it's not in the list of dates
+		# the dates are stored as tuples, so we need to make a new tuple here to compare
+		dateTuple = (date.strftime('%Y'), date.strftime('%m'))
+		if dateTuple not in dates :
+			#print date.strftime('skipping %Y-%m, was not in list of requested months')
+			continue
 
 		# add tabs after summary labels
 		summary = re.sub('Earned ', 'Earned\t', summary)
@@ -84,18 +103,25 @@ def parse(html) :
 		# parse out the tables (each row (currency) is strangely a table)
 		tables = month.find_all('table', { 'class' : 'earnings-matrix payments earned' })
 
-		for table in tables : 
+		text = ''
+
+		for table in tables :
 			for tr in table.find_all('tr') :
 				cols = []
 				for td in tr.find_all('td') :
-					text = td.text
+					inner = td.text
 
 					# if the row is the header, we replace it with a hand spaced one
-					if text == "Currency" : 
+					if inner == "Currency" :
 						cols = ['Currency    Beginning   Earned      Pre-Tax     Withholding Input       Adjustments Post-Tax    FX Rate     Payment\n', '            Balance                 Subtotal    Tax         Tax                     Subtotal']
 						break
 
-					cols.append(strip_whitespace(text).ljust(12))
-				print ''.join(cols).strip()
+					cols.append(strip_whitespace(inner).ljust(12))
+				text += ''.join(cols).strip() + '\n'
 
-		print summary + '\n'
+		text += '\n' + summary
+
+		print date.strftime('iTunes found data for %Y-%m')
+		output[date.strftime('%Y-%m')] = text
+
+	return output

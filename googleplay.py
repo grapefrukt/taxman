@@ -52,7 +52,10 @@ def get(bucket_id, dates) :
 
 	return newdates
 
-def parse(entries) :
+def parse(entries, dates) :
+
+	output = dict()
+
 	for entry in entries :
 		input_file = csv.DictReader(StringIO.StringIO(entry[2]))
 
@@ -77,23 +80,25 @@ def parse(entries) :
 			elif row['Transaction Type'] == 'Tax' :
 				sum_tax +=  Decimal(row['Amount (Merchant Currency)'])
 			else :
-				exit('Unknown field type: ' + row['Transaction Type'])
+				exit('Unknown field type: "{0}" in Google Play {1}-{2}'.format(row['Transaction Type'], entry[0], entry[1]))
 
 		total_sum = sum_taxed_sales + sum_untaxed_sales + sum_tax + sum_fees + sum_tax_refund + sum_sales_refund + sum_fee_refund
 
-		output = 'Sales report for Google Play Apps {0}-{1}\n\n'.format(entry[0], entry[1])
+		text = 'Sales report for Google Play Apps {0}-{1}\n\n'.format(entry[0], entry[1])
 
-		output += 'Taxed sales        {0}{1}\n'.format(format_currency(sum_taxed_sales), format_count(count_taxed_sales))
-		output += 'Tax                {0}\n'.format(format_currency(sum_tax))
-		output += 'Untaxed sales      {0}{1}\n'.format(format_currency(sum_untaxed_sales), format_count(count_untaxed_sales))
-		output += 'Google fees        {0}\n'.format(format_currency(sum_fees))
-		output += 'Refunds            {0}{1}\n'.format(format_currency(sum_sales_refund), format_count(-count_refunds))
-		output += 'Tax refunds        {0}\n'.format(format_currency(sum_tax_refund))
-		output += 'Google fee refunds {0}\n'.format(format_currency(sum_fee_refund))
-		output += 'Sum                {0}{1}\n'.format(format_currency(total_sum), format_count(count_taxed_sales + count_untaxed_sales - count_refunds))
-		output += '\n'
+		text += 'Taxed sales        {0}{1}\n'.format(format_currency(sum_taxed_sales), format_count(count_taxed_sales))
+		text += 'Tax                {0}\n'.format(format_currency(sum_tax))
+		text += 'Untaxed sales      {0}{1}\n'.format(format_currency(sum_untaxed_sales), format_count(count_untaxed_sales))
+		text += 'Google fees        {0}\n'.format(format_currency(sum_fees))
+		text += 'Refunds            {0}{1}\n'.format(format_currency(sum_sales_refund), format_count(-count_refunds))
+		text += 'Tax refunds        {0}\n'.format(format_currency(sum_tax_refund))
+		text += 'Google fee refunds {0}\n'.format(format_currency(sum_fee_refund))
+		text += 'Sum                {0}{1}\n'.format(format_currency(total_sum), format_count(count_taxed_sales + count_untaxed_sales - count_refunds))
+		text += '\n'
 
-		print(output)
+		output['{0}-{1}'.format(entry[0], entry[1])] = text
+
+	return output
 
 def format_currency(value) :
 	return '{:16,.2f} SEK'.format(value).replace(',', ' ')
