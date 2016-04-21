@@ -92,7 +92,7 @@ def setup() :
 	try:
 		urllib.urlretrieve('http://storage.googleapis.com/pub/gsutil.zip', 'gsutil.zip')
 	except IOError, e:
-		print('Can\'t retrieve gsutil.zip')
+		print('Can\'t retrieve gsutil.zip: {0}'.format(e))
 		return
 
 	print('Extracting gsutil...')
