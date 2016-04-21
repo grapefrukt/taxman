@@ -3,17 +3,13 @@ from __future__ import print_function
 
 import csv
 from decimal import Decimal
-import locale
+import collections
 import os
-import sys
-import platform
 import urllib
 import zipfile
 import subprocess
 import glob
-import shutil
 import StringIO
-import re
 
 def get(bucket_id, dates) :
 	print('Opening Google Storage Util...')
