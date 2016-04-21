@@ -40,8 +40,8 @@ if not os.path.exists(outPath) : os.makedirs(outPath)
 
 output = { 'ios' : dict(), 'android' : dict() }
 
-data = itunes.get(config.get('iTunes', 'username'), config.get('iTunes', 'password'), dates)
-if data : output['ios'] = itunes.parse(data, dates)
+#data = itunes.get(config.get('iTunes', 'username'), config.get('iTunes', 'password'), dates)
+#if data : output['ios'] = itunes.parse(data, dates)
 
 if not os.path.isfile('gsutil/gsutil.py') : googleplay.setup()
 
