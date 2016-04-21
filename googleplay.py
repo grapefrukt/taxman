@@ -55,42 +55,26 @@ def parse(entries, dates) :
 	for entry in entries :
 		input_file = csv.DictReader(StringIO.StringIO(entry[2]))
 
-		count_taxed_sales = 0
-		count_untaxed_sales = 0
-		count_refunds = 0
-
-		sum_taxed_sales = Decimal(0)
-		sum_untaxed_sales = Decimal(0)
-		sum_tax = Decimal(0)
-		sum_fees = Decimal(0)
-		sum_fee_refund = Decimal(0)
-		sum_tax_refund = Decimal(0)
-		sum_sales_refund = Decimal(0)
+		sums = collections.defaultdict(Decimal)
+		counts = collections.defaultdict(int)
 
 		for row in input_file:
-			if row['Transaction Type'] == 'Charge' :
-				count_taxed_sales += 1
-				sum_taxed_sales +=  Decimal(row['Amount (Merchant Currency)'])
-			elif row['Transaction Type'] == 'Google fee' :
-				sum_fees +=  Decimal(row['Amount (Merchant Currency)'])
-			elif row['Transaction Type'] == 'Tax' :
-				sum_tax +=  Decimal(row['Amount (Merchant Currency)'])
-			else :
-				exit('Unknown field type: "{0}" in Google Play {1}-{2}'.format(row['Transaction Type'], entry[0], entry[1]))
-
-		total_sum = sum_taxed_sales + sum_untaxed_sales + sum_tax + sum_fees + sum_tax_refund + sum_sales_refund + sum_fee_refund
+			sums[row['Transaction Type']] += Decimal(row['Amount (Merchant Currency)'])
+			counts[row['Transaction Type']] += 1
 
 		text = 'Sales report for Google Play Apps {0}-{1}\n\n'.format(entry[0], entry[1])
 
-		text += 'Taxed sales        {0}{1}\n'.format(format_currency(sum_taxed_sales), format_count(count_taxed_sales))
-		text += 'Tax                {0}\n'.format(format_currency(sum_tax))
-		text += 'Untaxed sales      {0}{1}\n'.format(format_currency(sum_untaxed_sales), format_count(count_untaxed_sales))
-		text += 'Google fees        {0}\n'.format(format_currency(sum_fees))
-		text += 'Refunds            {0}{1}\n'.format(format_currency(sum_sales_refund), format_count(-count_refunds))
-		text += 'Tax refunds        {0}\n'.format(format_currency(sum_tax_refund))
-		text += 'Google fee refunds {0}\n'.format(format_currency(sum_fee_refund))
-		text += 'Sum                {0}{1}\n'.format(format_currency(total_sum), format_count(count_taxed_sales + count_untaxed_sales - count_refunds))
-		text += '\n'
+		total_sum = Decimal(0)
+
+		for key, value in sums.items():
+			text += '{0}'.format(key).ljust(25) + '{0}'.format(format_currency(value))
+			if key == 'Charge' : 
+				text += '{0}'.format(format_count(counts[key])).rjust(15)
+			text += '\n'
+
+			total_sum += value
+
+		text += '\nSum'.format(key).ljust(25) + '{0}\n'.format(format_currency(total_sum))
 
 		output['{0}-{1}'.format(entry[0], entry[1])] = text
 
