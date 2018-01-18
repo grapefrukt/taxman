@@ -40,13 +40,13 @@ if not os.path.exists(outPath) : os.makedirs(outPath)
 
 output = { 'ios' : dict(), 'android' : dict() }
 
-#data = itunes.get(config.get('iTunes', 'username'), config.get('iTunes', 'password'), dates)
-#if data : output['ios'] = itunes.parse(data, dates)
+data = itunes.get(config.get('iTunes', 'username'), config.get('iTunes', 'token'), dates)
+if data : output['ios'] = itunes.parse(data, dates)
 
-if not os.path.isfile('gsutil/gsutil.py') : googleplay.setup()
+#if not os.path.isfile('gsutil/gsutil.py') : googleplay.setup()
 
-data = googleplay.get(config.get('Google Play', 'bucket_id'), dates)
-if data : output['android'] = googleplay.parse(data, dates)
+#data = googleplay.get(config.get('Google Play', 'bucket_id'), dates)
+#if data : output['android'] = googleplay.parse(data, dates)
 
 for platform, platformData in output.iteritems() :
 	platformPath = '{0}/{1}'.format(outPath, platform)
