@@ -1,15 +1,12 @@
-
-from __future__ import print_function
-
 import csv
 from decimal import Decimal
 import collections
 import os
-import urllib
+import urllib.request
 import zipfile
 import subprocess
 import glob
-import StringIO
+from io import StringIO
 
 def get(bucket_id, dates) :
 	print('Opening Google Storage Util...')
@@ -42,7 +39,7 @@ def get(bucket_id, dates) :
 
 			csvpath = glob.glob(os.path.join('tmp', 'PlayApps_{0}{1}*.csv'.format(year, month)))[0]
 
-			newdates.append(date + (open(csvpath).read(),))
+			newdates.append(date + (open(csvpath, encoding="utf8").read(),))
 
 			print('\tDone!\n')
 
@@ -53,7 +50,7 @@ def parse(entries, dates) :
 	output = dict()
 
 	for entry in entries :
-		input_file = csv.DictReader(StringIO.StringIO(entry[2]))
+		input_file = csv.DictReader(StringIO(entry[2]))
 
 		sums = collections.defaultdict(Decimal)
 		counts = collections.defaultdict(int)
@@ -90,8 +87,8 @@ def setup() :
 	print('Downloading gsutil...')
 
 	try:
-		urllib.urlretrieve('http://storage.googleapis.com/pub/gsutil.zip', 'gsutil.zip')
-	except IOError, e:
+		urllib.request.urlretrieve('http://storage.googleapis.com/pub/gsutil.zip', 'gsutil.zip')
+	except IOError as e:
 		print('Can\'t retrieve gsutil.zip: {0}'.format(e))
 		return
 
@@ -99,7 +96,7 @@ def setup() :
 
 	try:
 		z = zipfile.ZipFile('gsutil.zip')
-	except zipfile.error, e:
+	except zipfile.error as e:
 		print('Bad zipfile')
 		return
 
