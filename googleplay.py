@@ -8,7 +8,7 @@ import subprocess
 import glob
 from io import StringIO
 
-def get(bucket_id, dates) :
+def get(config, dates) :
 	print('Opening Google Storage Util...')
 
 	newdates = []
@@ -22,7 +22,7 @@ def get(bucket_id, dates) :
 
 		print('Fetching data for {0}-{1}'.format(year, month))
 
-		subprocess.call('python gsutil/gsutil.py cp gs://pubsite_prod_rev_{0}/earnings/earnings_{1}{2}*.zip tmp'.format(bucket_id, year, month))
+		subprocess.call('python gsutil/gsutil.py cp gs://pubsite_prod_rev_{0}/earnings/earnings_{1}{2}*.zip tmp'.format(config['bucket_id'], year, month))
 
 		print('\tExtrating data...')
 

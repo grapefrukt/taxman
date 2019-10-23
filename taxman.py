@@ -1,5 +1,6 @@
 import configparser
 import googleplay
+import itunes
 import os.path
 import argparse
 
@@ -34,17 +35,17 @@ for year in range(startyear, endyear + 1) :
 config = configparser.ConfigParser()
 config.read('taxman.cfg')
 
-outPath = config.get('Output', 'path').rstrip('/\\')
+outPath = config['output']['path'].rstrip('/\\')
 if not os.path.exists(outPath) : os.makedirs(outPath)
 
 output = { 'ios' : dict(), 'android' : dict() }
 
-#data = itunes.get(config.get('iTunes', 'username'), config.get('iTunes', 'token'), dates)
-#if data : output['ios'] = itunes.parse(data, dates)
+data = itunes.get(config['appstore'], dates)
+if data : output['ios'] = itunes.parse(data, dates)
 
 if not os.path.isfile('gsutil/gsutil.py') : googleplay.setup()
 
-data = googleplay.get(config.get('Google Play', 'bucket_id'), dates)
+data = googleplay.get(config['google'], dates)
 if data : output['android'] = googleplay.parse(data, dates)
 
 for platform, platformData in output.items() :

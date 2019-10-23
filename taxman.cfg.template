@@ -1,15 +1,19 @@
 # make a copy of this file named taxman.cfg to get started
 
-[iTunes]
-# it is a very good idea to create an account that only has access to the reports to use for this
-username: foo
-password: bar
+[appstore]
+# for api key, you will need to generate a key with "finance" permissions per these instructions:
+# https://developer.apple.com/documentation/appstoreconnectapi/creating_api_keys_for_app_store_connect_api#overview
+# your vendor_id can be found this way: https://help.apple.com/app-store-connect/#/dev3a16f3fe0
+key_id: 0000000000
+key_file: *relative path to p8 file goes here*
+issuer_id: 00000000-0000-0000-0000-000000000000
+vendor_id: 85851972
 
-[Google Play]
+[google]
 # at the end of your financial reports in the google play developer console is a gs:// url
 # your bucket id is the 20 digit number at the end of that
 bucket_id: 00000000000000000000
 
-[Output]
+[output]
 # this is the folder where your reports will be output, it will be created if it does not already exist
 path: tmp/output
