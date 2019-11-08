@@ -5,8 +5,6 @@ import os.path
 import argparse
 from utils import *
 
-
-
 if not os.path.isfile('taxman.cfg') : exit('Error: Config file (taxman.cfg) missing, please create it')
 
 parser = argparse.ArgumentParser(description='Retrieve and summarize sales data between dates.')

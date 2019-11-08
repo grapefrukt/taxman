@@ -4,6 +4,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import csv
 from utils import *
+import re
 
 def get(config, dates) :
 	#download(config, dates)
@@ -36,13 +37,23 @@ def parse(dates) :
 	for date in dates : parseSingle(date)
 
 def parseSingle(date) :
+	# first, we parse the data we can get from the API
+	# this contains sales (currency and count) per country and product
+	# but is missing data of what exactly was paid
+	# that file needs to be manually retrieved from app store connect
+
+	# this dictionary is keyed on product title
+	# each value is yet another dictionary, this time keyed per currency (which can include many countries)
+	# these then hold a TransactionCollection that stores count and sum
+	products = dict()
+
+	# we keep a second dictionary for data from the payout csv
+	# this stores the earned amount in the local currency, the unit count and most
+	# importantly the actual payout amount
+	currencies = defaultdict(TransactionCollection)
+
 	with open(filename(date), newline='') as f:
 		reader = csv.DictReader(f, delimiter='\t')
-
-		# this dictionary is keyed on product title
-		# each value is yet another dictionary, this time keyed per country of sale (which implies a single currency)
-		# these then hold a TransactionCollection that stores count and sum
-		products = dict()
 
 		for row in reader:
 			# the files contain two tables, once we reach the second one, bail
@@ -52,16 +63,35 @@ def parseSingle(date) :
 			if not titleKey in products : products[titleKey] = dict()
 			title = products[titleKey]
 
-			countryKey = row['Country Of Sale']
+			countryKey = row['Partner Share Currency']
 			if not countryKey in title : title[countryKey] = TransactionCollection()
 			country = title[countryKey]
 
 			country.count += int(row['Quantity'])
 			country.sum += Decimal(row['Extended Partner Share'])
 
+	with open(f'tmp/{date.year}-{date.month}.csv', newline='') as f:
+		# this file helpfully starts with two lines of nonsense, skip those
+		f.readline()
+		f.readline()
+		reader = csv.DictReader(f, delimiter=',')
+
+		for row in reader :
+			# grab the currency abbreviation in parenthesis at the end of the field
+			x = re.search('\w+(?=\))', row['Territory (Currency)'])
+			# this file also has noise at the end, bail if we reach it
+			if x is None : break
+			currencyKey = x.group()
+
+			currencies[currencyKey].sum += Decimal(row['Earned'])
+			currencies[currencyKey].count += Decimal(row['Units Sold'])
+			currencies[currencyKey].paid += Decimal(row['Proceeds'])
+
+
+	for currency, transactions in currencies.items() :
+		print(f'{currency}\t{transactions.count}\t{transactions.sum}\t\t{transactions.paid}')
+
 	for product, countries in products.items() :
 		print(product)
 		for country, transactions in countries.items() :
-			print()
-			print(f'{country}\t{transactions.count}')
-			print(f'\t{transactions.sum}')
+			print(f'{country}\t{transactions.count}\t{transactions.sum}')
