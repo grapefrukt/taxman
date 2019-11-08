@@ -1,6 +1,7 @@
 import csv
 from decimal import Decimal
 import collections
+from collections import defaultdict
 import os
 import urllib.request
 import zipfile
@@ -8,28 +9,31 @@ import subprocess
 import glob
 from io import StringIO
 
+class TransactionCollection :
+	def __init__(self):
+		self.sum = Decimal(0)
+		self.count = int(0)
+
+
 def get(config, dates) :
 	print('Opening Google Storage Util...')
 
-	newdates = []
+	data = []
 
 	if not os.path.exists('tmp') :
 		os.makedirs('tmp')
 
 	for date in dates :
-		year = date[0]
-		month = date[1]
+		print('Fetching data for {0}-{1}'.format(date.year, date.month))
 
-		print('Fetching data for {0}-{1}'.format(year, month))
-
-		subprocess.call('python gsutil/gsutil.py cp gs://pubsite_prod_rev_{0}/earnings/earnings_{1}{2}*.zip tmp'.format(config['bucket_id'], year, month))
+		subprocess.call('python gsutil/gsutil.py cp gs://pubsite_prod_rev_{0}/earnings/earnings_{1}{2}*.zip tmp'.format(config['bucket_id'], date.year, date.month))
 
 		print('\tExtrating data...')
 
 		try :
-			zippath = glob.glob(os.path.join('tmp', 'earnings_{0}{1}*.zip'.format(year, month)))[0]
+			zippath = glob.glob(os.path.join('tmp', 'earnings_{0}{1}*.zip'.format(date.year, date.month)))[0]
 		except IndexError :
-			print('\tNo data found for {0}{1}'.format(year, month))
+			print('\tNo data found for {0}{1}'.format(date.year, date.month))
 		else :
 
 			z = zipfile.ZipFile(zippath)
@@ -37,45 +41,90 @@ def get(config, dates) :
 
 			print('\tParsing CSV data...')
 
-			csvpath = glob.glob(os.path.join('tmp', 'PlayApps_{0}{1}*.csv'.format(year, month)))[0]
+			csvpath = glob.glob(os.path.join('tmp', 'PlayApps_{0}{1}*.csv'.format(date.year, date.month)))[0]
 
-			newdates.append(date + (open(csvpath, encoding="utf8").read(),))
+			data.append(open(csvpath, encoding="utf8").read(),)
 
 			print('\tDone!\n')
 
-	return newdates
+	return data
 
-def parse(entries, dates) :
+# takes a list of data, data is an array of csv strings per month
+# dates is a list of year/month tuples
 
+def parse(data, dates) :
+	# output is a dictionary with the month as key and the generated report as value
 	output = dict()
 
-	for entry in entries :
-		input_file = csv.DictReader(StringIO(entry[2]))
-
-		sums = collections.defaultdict(Decimal)
-		counts = collections.defaultdict(int)
-
-		for row in input_file:
-			sums[row['Transaction Type']] += Decimal(row['Amount (Merchant Currency)'])
-			counts[row['Transaction Type']] += 1
-
-		text = 'Sales report for Google Play Apps {0}-{1}\n\n'.format(entry[0], entry[1])
-
-		total_sum = Decimal(0)
-
-		for key, value in sums.items():
-			text += '{0}'.format(key).ljust(25) + '{0}'.format(format_currency(value))
-			if key == 'Charge' : 
-				text += '{0}'.format(format_count(counts[key])).rjust(15)
-			text += '\n'
-
-			total_sum += value
-
-		text += '\nSum'.format(key).ljust(25) + '{0}\n'.format(format_currency(total_sum))
-
-		output['{0}-{1}'.format(entry[0], entry[1])] = text
+	for index, entry in enumerate(data) :
+		output['{0}-{1}'.format(dates[index][0], dates[index][1])] = parseSingle(entry, dates[index])
 
 	return output
+
+def parseSingle(entry, date) :
+	input_file = csv.DictReader(StringIO(entry))
+
+	# a TransactionCollection holds two values, a sum and a counts
+	# we keep a dictionary of these hashed on the transaction type,
+	# ie one for "Charge", one for "Google fee" and so on
+	overall = defaultdict(TransactionCollection)
+
+	# we keep a second dictionary that stores this same data, but per product
+	# this is stored "one level down" ie product->transaction type->sum/count
+	products = dict()
+
+	for row in input_file:
+		# the dictionary is a defaultdict, so we can write to any key and it will
+		# automatically populate that with default values if it's the first time
+		key = row['Transaction Type']
+		overall[key].sum += Decimal(row['Amount (Merchant Currency)'])
+		overall[key].count += 1
+
+		# this defaultdict trickery won't work here, so we need to check if a
+		# key exists, if not we create it
+		productKey = row['Product Title']
+		product = products.get(productKey, defaultdict(TransactionCollection));
+		product[key].sum += Decimal(row['Amount (Merchant Currency)'])
+		product[key].count += 1
+
+		# because of the key creation bit, we need to store the value too
+		products[productKey] = product
+
+	text = f'Sales report for Google Play Apps {date.year}-{date.month}\n\n'
+	text += summarize(overall)
+
+	# make a nice horizontal ruler
+	text += '-' * 61 + '\n\n'
+
+	# now, output per product data
+	text += 'Per product:'
+	for key, value in products.items():
+		text += summarizeProduct(key, value)
+
+	return text
+
+def summarize(collection) :
+	text = ''
+	sum = Decimal(0)
+	for key, value in collection.items() :
+		text += f'{key.ljust(25)}{format_currency(value.sum)}'
+		if key == 'Charge' :
+			text += format_count(value.count).rjust(15)
+		text += '\n'
+
+		sum += value.sum
+
+	return text + '\nSum'.format(key).ljust(25) + '{0}\n\n'.format(format_currency(sum))
+
+def summarizeProduct(name, collection) :
+	sum = Decimal(0)
+	count = int(0)
+
+	for key, value in collection.items() :
+		if key == 'Charge' : count = value.count
+		sum += value.sum
+
+	return f'\n    {name.ljust(21)}{format_currency(sum)}{format_count(count)}'
 
 def format_currency(value) :
 	return '{:16,.2f} SEK'.format(value).replace(',', ' ')

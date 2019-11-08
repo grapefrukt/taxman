@@ -8,11 +8,15 @@ key_id: 0000000000
 key_file: *relative path to p8 file goes here*
 issuer_id: 00000000-0000-0000-0000-000000000000
 vendor_id: 85851972
+# don't forget to enable this if you want to fetch data from this store!
+enabled: false
 
 [google]
 # at the end of your financial reports in the google play developer console is a gs:// url
 # your bucket id is the 20 digit number at the end of that
 bucket_id: 00000000000000000000
+# don't forget to enable this if you want to fetch data from this store!
+enabled: false
 
 [output]
 # this is the folder where your reports will be output, it will be created if it does not already exist
