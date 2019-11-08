@@ -15,7 +15,7 @@ class TaxMonth(NamedTuple) :
 	month: str
 
 def format_currency(value) :
-	return '{:16,.2f} SEK'.format(value).replace(',', ' ')
+	return '{:16,.2f} SEK'.format(value).replace(',', ' ').replace('.', ',')
 
 def format_count(value) :
-	return '{:10} units'.format(value)
+	return '{:10,.0f} units'.format(value).replace(',', ' ').replace('.', ',')

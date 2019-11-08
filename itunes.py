@@ -5,6 +5,7 @@ from dateutil.relativedelta import relativedelta
 import csv
 from utils import *
 import re
+from decimal import *
 
 def get(config, dates) :
 	#download(config, dates)
@@ -47,10 +48,10 @@ def parseSingle(date) :
 	# these then hold a TransactionCollection that stores count and sum
 	products = dict()
 
-	# we keep a second dictionary for data from the payout csv
+	# we keep a second dictionary for data from the payouts csv
 	# this stores the earned amount in the local currency, the unit count and most
 	# importantly the actual payout amount
-	currencies = defaultdict(TransactionCollection)
+	payouts = defaultdict(TransactionCollection)
 
 	with open(filename(date), newline='') as f:
 		reader = csv.DictReader(f, delimiter='\t')
@@ -83,15 +84,28 @@ def parseSingle(date) :
 			if x is None : break
 			currencyKey = x.group()
 
-			currencies[currencyKey].sum += Decimal(row['Earned'])
-			currencies[currencyKey].count += Decimal(row['Units Sold'])
-			currencies[currencyKey].paid += Decimal(row['Proceeds'])
+			payouts[currencyKey].sum += Decimal(row['Earned'])
+			payouts[currencyKey].count += Decimal(row['Units Sold'])
+			payouts[currencyKey].paid += Decimal(row['Proceeds'])
 
+	#for currency, transactions in payouts.items() :
+		#print(f'{currency}\t{transactions.count}\t{transactions.sum}\t\t{transactions.paid}')
 
-	for currency, transactions in currencies.items() :
-		print(f'{currency}\t{transactions.count}\t{transactions.sum}\t\t{transactions.paid}')
+	for product, currencies in products.items() :
+		currencies['_'] = TransactionCollection()
 
-	for product, countries in products.items() :
-		print(product)
-		for country, transactions in countries.items() :
-			print(f'{country}\t{transactions.count}\t{transactions.sum}')
+	for product, currencies in products.items() :
+		for currency, transactions in currencies.items() :
+			if currency == '_' : continue
+			# calculate this produts share out of the total in this currency
+			shareFraction = transactions.sum / payouts[currency].sum
+			sharePayoutCurrency = Decimal(shareFraction * payouts[currency].paid)
+			sharePayoutCurrency = sharePayoutCurrency.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+
+			currencies['_'].paid += sharePayoutCurrency
+			currencies['_'].count += transactions.count
+			#print(f'{currency}\t{transactions.count}\t{transactions.sum}\t{shareFraction}\t{sharePayoutCurrency}')
+
+		XYZ = currencies['_']
+		print(f'    {product.ljust(21)}{format_currency(XYZ.paid)}{format_count(XYZ.count)}')
+		#print(f'\n    {name.ljust(21)}{format_currency(sum)}{format_count(count)}')
