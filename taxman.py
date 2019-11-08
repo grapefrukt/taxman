@@ -3,11 +3,9 @@ import googleplay
 import itunes
 import os.path
 import argparse
-from typing import NamedTuple
+from utils import *
 
-class TaxMonth(NamedTuple) :
-	year: str
-	month: str
+
 
 if not os.path.isfile('taxman.cfg') : exit('Error: Config file (taxman.cfg) missing, please create it')
 
@@ -46,22 +44,18 @@ if not os.path.exists(outPath) : os.makedirs(outPath)
 output = { 'ios' : dict(), 'android' : dict() }
 
 if config['appstore']['enabled'] == 'true' :
-	data = itunes.get(config['appstore'], dates)
-	if data : output['ios'] = itunes.parse(data, dates)
-
+	output['ios'] = itunes.get(config['appstore'], dates)
 
 if config['google']['enabled'] == 'true' :
 	if not os.path.isfile('gsutil/gsutil.py') : googleplay.setup()
-	data = googleplay.get(config['google'], dates)
-	if data : output['android'] = googleplay.parse(data, dates)
+	output['android'] = googleplay.get(config['google'], dates)
 
 for platform, platformData in output.items() :
-	platformPath = '{0}/{1}'.format(outPath, platform)
+	platformPath = f'{outPath}/{platform}'
 	if not os.path.exists(platformPath) : os.makedirs(platformPath)
 
 	for month, monthData in platformData.items() :
-		path = '{0}/{1}.txt'.format(platformPath, month)
-
+		path = f'{platformPath}/{month}.txt'
 		f = open(path, 'w+')
 		f.write(monthData)
 		f.close()

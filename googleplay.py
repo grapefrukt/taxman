@@ -1,5 +1,5 @@
 import csv
-from decimal import Decimal
+from utils import *
 import collections
 from collections import defaultdict
 import os
@@ -8,12 +8,6 @@ import zipfile
 import subprocess
 import glob
 from io import StringIO
-
-class TransactionCollection :
-	def __init__(self):
-		self.sum = Decimal(0)
-		self.count = int(0)
-
 
 def get(config, dates) :
 	print('Opening Google Storage Util...')
@@ -47,7 +41,7 @@ def get(config, dates) :
 
 			print('\tDone!\n')
 
-	return data
+	return parse(data, dates)
 
 # takes a list of data, data is an array of csv strings per month
 # dates is a list of year/month tuples
@@ -71,7 +65,7 @@ def parseSingle(entry, date) :
 
 	# we keep a second dictionary that stores this same data, but per product
 	# this is stored "one level down" ie product->transaction type->sum/count
-	products = dict()
+	products = dict(defaultdict(TransactionCollection))
 
 	for row in input_file:
 		# the dictionary is a defaultdict, so we can write to any key and it will
@@ -83,12 +77,10 @@ def parseSingle(entry, date) :
 		# this defaultdict trickery won't work here, so we need to check if a
 		# key exists, if not we create it
 		productKey = row['Product Title']
-		product = products.get(productKey, defaultdict(TransactionCollection));
+		if productKey not in products : products[productKey] = defaultdict(TransactionCollection)
+		product = products[productKey]
 		product[key].sum += Decimal(row['Amount (Merchant Currency)'])
 		product[key].count += 1
-
-		# because of the key creation bit, we need to store the value too
-		products[productKey] = product
 
 	text = f'Sales report for Google Play Apps {date.year}-{date.month}\n\n'
 	text += summarize(overall)
@@ -125,12 +117,6 @@ def summarizeProduct(name, collection) :
 		sum += value.sum
 
 	return f'\n    {name.ljust(21)}{format_currency(sum)}{format_count(count)}'
-
-def format_currency(value) :
-	return '{:16,.2f} SEK'.format(value).replace(',', ' ')
-
-def format_count(value) :
-	return '{:10} units'.format(value)
 
 def setup() :
 	print('Downloading gsutil...')
