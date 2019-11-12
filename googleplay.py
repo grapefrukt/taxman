@@ -59,7 +59,7 @@ def parse(data, dates):
     output = dict()
 
     for index, entry in enumerate(data):
-        key = dates[index][0] + '-' + dates[index][1]
+        key = dates[index].year + '-' + dates[index].month
         output[key] = parseSingle(entry, dates[index])
 
     return output

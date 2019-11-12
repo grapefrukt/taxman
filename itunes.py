@@ -14,8 +14,7 @@ import os.path
 
 def get(config, dates):
     download(config, dates)
-    parse(config, dates)
-    return {}
+    return parse(config, dates)
 
 
 def filename(date):
@@ -47,9 +46,18 @@ def download(config, dates):
             save_to=outpath)
 
 
+# takes a list of data, data is an array of csv strings per month
+# dates is a list of year/month tuples
 def parse(config, dates):
+    # output is a dictionary with the month as key
+    # and the generated report as value
+    output = dict()
+
     for date in dates:
-        parseSingle(config, date)
+        key = date.year + '-' + date.month
+        output[key] = parseSingle(config, date)
+
+    return output
 
 
 def parseSingle(config, date):
@@ -94,7 +102,7 @@ def parseSingle(config, date):
     # parse the data that was manually downloaded
     report = config['proceeds_report_path'] + f'/{date.year}-{date.month}.csv'
     if not os.path.exists(report):
-        print(f'no app store payout report found for {date.year}-{date.month}.')
+        print(f'no app store payout report found for {date.year}-{date.month}')
         print(f'you need to download this manually!')
         exit()
 
@@ -122,6 +130,9 @@ def parseSingle(config, date):
     for product, currencies in products.items():
         currencies['_'] = TransactionCollection()
 
+    text = f'Sales report for AppStore Connect {date.year}-{date.month}\n\n'
+    text += 'PER PRODUCT (including charges, fees, taxes, and refunds):\n\n'
+
     for product, currencies in products.items():
         for currency, transactions in currencies.items():
 
@@ -132,16 +143,22 @@ def parseSingle(config, date):
             # calculate this produts share out of the total in this currency
             # it's possible to not have any sales for a currency, so we need
             # to guard for a division by zero here
-            shareFraction = 0
+            fraction = 0
             if payouts[currency].sum > 0:
-                shareFraction = transactions.sum / payouts[currency].sum
+                fraction = transactions.sum / payouts[currency].sum
 
-            sharePayoutCurrency = Decimal(shareFraction * payouts[currency].paid)
-            sharePayoutCurrency = sharePayoutCurrency.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+            sharePayoutCurrency = Decimal(fraction * payouts[currency].paid)
+            sharePayoutCurrency = sharePayoutCurrency.quantize(
+                Decimal('.01'),
+                rounding=ROUND_HALF_UP)
 
             currencies['_'].paid += sharePayoutCurrency
             currencies['_'].count += transactions.count
 
         XYZ = currencies['_']
-        print(f'    {product.ljust(21)}{format_currency(XYZ.paid)}{format_count(XYZ.count)}')
-        #print(f'\n    {name.ljust(21)}{format_currency(sum)}{format_count(count)}')
+        text += (f'{product.ljust(21)}'
+            f'{format_currency(XYZ.paid)}'
+            f'{format_count(XYZ.count)}\n'
+        )
+
+    return text
