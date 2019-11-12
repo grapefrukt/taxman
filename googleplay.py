@@ -23,7 +23,7 @@ def get(config, dates):
         filename = f'tmp/PlayApps_{date.year}{date.month}.csv'
 
         if not os.path.exists(filename):
-            download(date, config)
+            download(config, date)
 
         print('\tParsing CSV data...')
         data.append(open(filename, encoding="utf8").read(),)
@@ -32,7 +32,7 @@ def get(config, dates):
     return parse(data, dates)
 
 
-def download(date, config):
+def download(config, date):
     print(f'Fetching data for {date.year}-{date.month}')
     url = f'gs://pubsite_prod_rev_{config.get("bucket_id")}'
     url += f'/earnings/earnings_{date.year}{date.month}*.zip'
@@ -49,6 +49,7 @@ def download(date, config):
     else:
         z = zipfile.ZipFile(zippath)
         z.extractall('tmp')
+
 
 # takes a list of data, data is an array of csv strings per month
 # dates is a list of year/month tuples
@@ -94,17 +95,27 @@ def parseSingle(entry, date):
         product[key].count += 1
 
     text = f'Sales report for Google Play Apps {date.year}-{date.month}\n\n'
+
+    text += 'CHARGES, FEES, TAXES, AND REFUNDS:\n\n'
     text += summarize(overall)
 
-    # make a nice horizontal ruler
-    text += '-' * 61 + '\n\n'
-
-    # now, output per product data
-    text += 'Per product:'
+    # output per product data
+    text += '\n\n'
+    text += 'PER PRODUCT (including charges, fees, taxes, and refunds):\n\n'
     for key, value in products.items():
         text += summarizeProduct(key, value)
 
+    text += '\n\n'
+    text += summarizePayout(overall)
+
     return text
+
+
+def summarizePayout(collection):
+    sum = Decimal(0)
+    for key, value in collection.items():
+        sum += value.sum
+    return 'Payout'.ljust(25) + f'{format_currency(sum)}'
 
 
 def summarize(collection):
@@ -115,10 +126,8 @@ def summarize(collection):
         if key == 'Charge':
             text += format_count(value.count).rjust(15)
         text += '\n'
-
         sum += value.sum
-
-    return text + '\nSum'.format(key).ljust(25) + f'{format_currency(sum)}\n\n'
+    return text
 
 
 def summarizeProduct(name, collection):
@@ -126,17 +135,20 @@ def summarizeProduct(name, collection):
     count = int(0)
 
     for key, value in collection.items():
-        if key == 'Charge' : count = value.count
+        if key == 'Charge':
+            count = value.count
         sum += value.sum
 
-    return f'\n    {name.ljust(21)}{format_currency(sum)}{format_count(count)}'
+    return f'{name.ljust(25)}{format_currency(sum)}{format_count(count)}\n'
 
 
 def setup():
     print('Downloading gsutil...')
 
     try:
-        urllib.request.urlretrieve('http://storage.googleapis.com/pub/gsutil.zip', 'gsutil.zip')
+        urllib.request.urlretrieve(
+            'http://storage.googleapis.com/pub/gsutil.zip',
+            'gsutil.zip')
     except IOError as e:
         print('Can\'t retrieve gsutil.zip: {0}'.format(e))
         return
@@ -145,7 +157,7 @@ def setup():
 
     try:
         z = zipfile.ZipFile('gsutil.zip')
-    except zipfile.error as e:
+    except zipfile.error:
         print('Bad zipfile')
         return
 
