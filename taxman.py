@@ -76,5 +76,5 @@ for platform, platformData in output.items():
         f.write(monthData)
         f.close()
 
-        if  config['output']['verbose']:
+        if config['output']['verbose'] == 'true':
             print(monthData)
