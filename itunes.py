@@ -3,7 +3,6 @@ from collections import defaultdict
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
-from decimal import ROUND_HALF_UP
 import csv
 from utils import TransactionCollection
 from utils import format_currency
@@ -106,21 +105,38 @@ def parseSingle(config, date):
         print(f'you need to download this manually!')
         exit()
 
+    actualPayout = Decimal()
+
     with open(report, newline='') as f:
         # this file helpfully starts with two lines of nonsense, skip those
         f.readline()
         f.readline()
         reader = csv.DictReader(f, delimiter=',')
 
+        # this field name changed in late 2019, so we need to try both
+        currencyField = 'Territory (Currency)'
+        if currencyField not in reader.fieldnames:
+            currencyField = 'Country or Region (Currency)'
+
         for row in reader:
             # grab the currency abbreviation in parenthesis at the end
-            x = re.search(r'\w+(?=\))', row['Territory (Currency)'])
+            x = re.search(r'\((\w{3})\)', row[currencyField])
 
-            # this file also has noise at the end, bail if we reach it
+            # this file also has noise at the end
+            # this can mostly be ignored, but we do want the actual payout sum
+            # just to confirm out math
             if x is None:
-                break
+                # check the last field, if it has numbers, it's the
+                lastField = row['Bank Account Currency']
+                if re.match(r'\d', lastField) is not None:
+                    # strip out anything that isn't a number or a period
+                    stripped = re.sub(r'[^\d\.]', '', lastField)
+                    # sometimes there's two payouts in one report, add instead
+                    # of replacing the current payouts
+                    actualPayout += Decimal(stripped)
+                continue
 
-            currencyKey = x.group()
+            currencyKey = x.group(1)
             payouts[currencyKey].sum += Decimal(row['Earned'])
             payouts[currencyKey].count += Decimal(row['Units Sold'])
             payouts[currencyKey].paid += Decimal(row['Proceeds'])
@@ -133,6 +149,7 @@ def parseSingle(config, date):
     text = f'Sales report for AppStore Connect {date.year}-{date.month}\n\n'
     text += 'PER PRODUCT (including charges, fees, taxes, and refunds):\n\n'
 
+    calculatedPayout = Decimal()
     for product, currencies in products.items():
         for currency, transactions in currencies.items():
 
@@ -148,17 +165,16 @@ def parseSingle(config, date):
                 fraction = transactions.sum / payouts[currency].sum
 
             sharePayoutCurrency = Decimal(fraction * payouts[currency].paid)
-            sharePayoutCurrency = sharePayoutCurrency.quantize(
-                Decimal('.01'),
-                rounding=ROUND_HALF_UP)
-
             currencies['_'].paid += sharePayoutCurrency
             currencies['_'].count += transactions.count
 
-        XYZ = currencies['_']
-        text += (f'{product.ljust(21)}'
-            f'{format_currency(XYZ.paid)}'
-            f'{format_count(XYZ.count)}\n'
-        )
+        calculatedPayout += currencies['_'].paid
+        text += product.ljust(25)
+        text += format_currency(currencies['_'].paid)
+        text += format_count(currencies['_'].count) + '\n'
+
+    text += '\n\n'
+    text += 'Payout'.ljust(25) + format_currency(actualPayout)
+    # text += '\nPayout'.ljust(25) + format_currency(calculatedPayout)
 
     return text
