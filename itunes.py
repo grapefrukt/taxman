@@ -9,20 +9,20 @@ from utils import TransactionCollection
 from utils import format_currency
 from utils import format_count
 import re
+import os.path
 
 
 def get(config, dates):
-    # download(config, dates)
+    download(config, dates)
     parse(dates)
     return {}
 
 
 def filename(date):
-    return f'tmp/itunes_{date.year}-{date.month}.csv'
+    return f'itunes_{date.year}-{date.month}.csv'
 
 
 def download(config, dates):
-    print('Connecting to AppStore Connect API...')
     api = Api(config['key_id'], config['key_file'], config['issuer_id'])
 
     for date in dates:
@@ -32,13 +32,19 @@ def download(config, dates):
         # the apple date is offset by a quarter
         appleDate = actualDate + relativedelta(months=3)
 
-        print(f'Getting data for {date.year}-{date.month}')
+        print(f'Getting data for {date.year}-{date.month}', end='')
         print(f' ({appleDate.year}-{appleDate.month:02d} in Apple Time)')
 
+        outpath = 'tmp/' + filename(date)
+        # skip this file if we have it already
+        if os.path.exists(outpath):
+            continue
+
+        print('Connecting to AppStore Connect API...')
         api.download_finance_reports(filters={
             'vendorNumber': config['vendor_id'],
             'reportDate': f'{appleDate.year}-{appleDate.month:02d}'},
-            save_to=filename(date))
+            save_to=outpath)
 
 
 def parse(dates):
@@ -63,7 +69,7 @@ def parseSingle(date):
     # most importantly the actual payout amount
     payouts = defaultdict(TransactionCollection)
 
-    with open(filename(date), newline='') as f:
+    with open('tmp/' + filename(date), newline='') as f:
         reader = csv.DictReader(f, delimiter='\t')
 
         for row in reader:

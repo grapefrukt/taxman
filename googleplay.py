@@ -10,47 +10,45 @@ import zipfile
 import subprocess
 import glob
 from io import StringIO
+import os.path
 
 
 def get(config, dates):
-    print('Opening Google Storage Util...')
-
     data = []
 
     if not os.path.exists('tmp'):
         os.makedirs('tmp')
 
     for date in dates:
-        print(f'Fetching data for {date.year}-{date.month}')
+        filename = f'tmp/PlayApps_{date.year}{date.month}.csv'
 
-        url = f'gs://pubsite_prod_rev_{config.get("bucket_id")}'
-        url += f'/earnings/earnings_{date.year}{date.month}*.zip'
-        #subprocess.call(f'python gsutil/gsutil.py cp {url} tmp')
+        if not os.path.exists(filename):
+            download(date, config)
 
-        print('\tExtrating data...')
-
-        try:
-            zippath = glob.glob(
-                os.path.join('tmp', f'earnings_{date.year}{date.month}*.zip')
-            )[0]
-        except IndexError:
-            print('\tNo data found for {0}{1}'.format(date.year, date.month))
-        else:
-
-            z = zipfile.ZipFile(zippath)
-            z.extractall('tmp')
-
-            print('\tParsing CSV data...')
-
-            filename = f'PlayApps_{date.year}{date.month}*.csv'
-            csvpath = glob.glob(os.path.join('tmp', filename))[0]
-
-            data.append(open(csvpath, encoding="utf8").read(),)
-
-            print('\tDone!\n')
+        print('\tParsing CSV data...')
+        data.append(open(filename, encoding="utf8").read(),)
+        print('\tDone!\n')
 
     return parse(data, dates)
 
+
+def download(date, config):
+    print(f'Fetching data for {date.year}-{date.month}')
+    url = f'gs://pubsite_prod_rev_{config.get("bucket_id")}'
+    url += f'/earnings/earnings_{date.year}{date.month}*.zip'
+    subprocess.call(f'python gsutil/gsutil.py cp {url} tmp')
+
+    print('\tExtrating data...')
+
+    try:
+        zippath = glob.glob(
+            os.path.join('tmp', f'earnings_{date.year}{date.month}*.zip')
+        )[0]
+    except IndexError:
+        print('\tNo data found for {0}{1}'.format(date.year, date.month))
+    else:
+        z = zipfile.ZipFile(zippath)
+        z.extractall('tmp')
 
 # takes a list of data, data is an array of csv strings per month
 # dates is a list of year/month tuples
