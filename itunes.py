@@ -126,7 +126,7 @@ def parseSingle(config, date):
             # this can mostly be ignored, but we do want the actual payout sum
             # just to confirm out math
             if x is None:
-                # check the last field, if it has numbers, it's the
+                # check the last field, if it has numbers, it's the payout
                 lastField = row['Bank Account Currency']
                 if re.match(r'\d', lastField) is not None:
                     # strip out anything that isn't a number or a period
