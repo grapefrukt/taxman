@@ -75,3 +75,6 @@ for platform, platformData in output.items():
         f = open(path, 'w+')
         f.write(monthData)
         f.close()
+
+        if  config['output']['verbose']:
+            print(monthData)
