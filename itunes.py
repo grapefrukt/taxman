@@ -103,6 +103,7 @@ def parseSingle(config, date):
     if not os.path.exists(report):
         print(f'no app store payout report found for {date.year}-{date.month}')
         print(f'you need to download this manually!')
+        print(f'put in this folder: ' + config['proceeds_report_path'])
         exit()
 
     actualPayout = Decimal()
