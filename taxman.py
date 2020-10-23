@@ -1,5 +1,6 @@
 import configparser
 import googleplay
+import googleplaypass
 import itunes
 import os.path
 import argparse
@@ -58,12 +59,13 @@ if not os.path.exists(outPath):
 output = defaultdict(dict)
 
 if config['appstore']['enabled'] == 'true':
-    output['ios'] = itunes.get(config['appstore'], dates)
+    output['appstore'] = itunes.get(config['appstore'], dates)
 
 if config['google']['enabled'] == 'true':
-    if not os.path.isfile('gsutil/gsutil.py'):
-        googleplay.setup()
-    output['android'] = googleplay.get(config['google'], dates)
+    output['googleplay'] = googleplay.get(config['google'], dates)
+
+if config['google']['play_pass_enabled'] == 'true':
+    output['googleplay-pass'] = googleplaypass.get(config['google'], dates, config['packages'])
 
 for platform, platformData in output.items():
     platformPath = f'{outPath}/{platform}'

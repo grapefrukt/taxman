@@ -12,12 +12,11 @@ import glob
 from io import StringIO
 import os.path
 
+from googleplay import download
 
-def get(config, dates):
-    print(f'Google Play')
 
-    if not os.path.isfile('gsutil/gsutil.py'):
-        googleplay.setup()
+def get(config, dates, packagemap):
+    print(f'Google Play Pass')
 
     data = []
 
@@ -25,53 +24,34 @@ def get(config, dates):
         os.makedirs('tmp')
 
     for date in dates:
-        filename = f'tmp/PlayApps_{date.year}{date.month}.csv'
+        filename = f'tmp/play_pass_earnings_{date.year}{date.month}.csv'
 
         if not os.path.exists(filename):
             print('\tFetching data from Google...')
-            download(config, date, 'earnings')
+            download(config, date, 'play_pass_earnings')
 
         print(f'\tParsing data for {date.year}-{date.month}... ', end='')
         data.append(open(filename, encoding="utf8").read(),)
         print('done!')
 
-    return parse(data, dates)
-
-
-def download(config, date, path):
-    print(f'Fetching data for {date.year}-{date.month}')
-    url = f'gs://pubsite_prod_rev_{config.get("bucket_id")}'
-    url += f'/{path}/{path}_{date.year}{date.month}*.zip'
-    subprocess.call(f'python gsutil/gsutil.py cp {url} tmp')
-
-    print('\tExtrating data...')
-
-    try:
-        zippath = glob.glob(
-            os.path.join('tmp', f'{path}_{date.year}{date.month}*.zip')
-        )[0]
-    except IndexError:
-        print('\tNo data found for {0}{1}'.format(date.year, date.month))
-    else:
-        z = zipfile.ZipFile(zippath)
-        z.extractall('tmp')
+    return parse(data, dates, packagemap)
 
 
 # takes a list of data, data is an array of csv strings per month
 # dates is a list of year/month tuples
-def parse(data, dates):
+def parse(data, dates, packagemap):
     # output is a dictionary with the month as key
     # and the generated report as value
     output = dict()
 
     for index, entry in enumerate(data):
         key = dates[index].year + '-' + dates[index].month
-        output[key] = parseSingle(entry, dates[index])
+        output[key] = parseSingle(entry, dates[index], packagemap)
 
     return output
 
 
-def parseSingle(entry, date):
+def parseSingle(entry, date, packagemap):
     input_file = csv.DictReader(StringIO(entry))
 
     # a TransactionCollection holds two values, a sum and a counts
@@ -93,23 +73,23 @@ def parseSingle(entry, date):
 
         # this defaultdict trickery won't work here, so we need to check if a
         # key exists, if not we create it
-        productKey = row['Product Title']
+        productKey = row['Product Id']
         if productKey not in products:
             products[productKey] = defaultdict(TransactionCollection)
         product = products[productKey]
         product[key].sum += Decimal(row['Amount (Merchant Currency)'])
         product[key].count += 1
 
-    text = f'Sales report for Google Play Apps {date.year}-{date.month}\n\n'
+    text = f'Revenue report for Google Play Pass {date.year}-{date.month}\n\n'
 
-    text += 'CHARGES, FEES, TAXES, AND REFUNDS:\n\n'
     text += summarize(overall)
 
     # output per product data
     text += '\n\n'
     text += 'PER PRODUCT (including charges, fees, taxes, and refunds):\n\n'
     for key, value in products.items():
-        text += summarizeProduct(key, value)
+        name = packagemap.get(key, fallback=key);
+        text += summarizeProduct(name, value)
 
     text += '\n\n'
     text += summarizePayout(overall)
@@ -129,8 +109,6 @@ def summarize(collection):
     sum = Decimal(0)
     for key, value in collection.items():
         text += f'{key.ljust(25)}{format_currency(value.sum)}'
-        if key == 'Charge':
-            text += format_count(value.count).rjust(15)
         text += '\n'
         sum += value.sum
     return text
@@ -145,33 +123,4 @@ def summarizeProduct(name, collection):
             count = value.count
         sum += value.sum
 
-    return f'{name.ljust(25)}{format_currency(sum)}{format_count(count)}\n'
-
-
-def setup():
-    print('Downloading gsutil...')
-
-    try:
-        urllib.request.urlretrieve(
-            'http://storage.googleapis.com/pub/gsutil.zip',
-            'gsutil.zip')
-    except IOError as e:
-        print('Can\'t retrieve gsutil.zip: {0}'.format(e))
-        return
-
-    print('Extracting gsutil...')
-
-    try:
-        z = zipfile.ZipFile('gsutil.zip')
-    except zipfile.error:
-        print('Bad zipfile')
-        return
-
-    z.extractall('.')
-
-    z.close()
-    os.unlink('gsutil.zip')
-
-    print('Downloaded gsutil')
-
-    subprocess.call('python gsutil/gsutil.py config', shell=True)
+    return f'{name.ljust(25)}{format_currency(sum)}\n'

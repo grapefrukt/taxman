@@ -12,6 +12,7 @@ import os.path
 
 
 def get(config, dates):
+    print(f'iTunes Connect')
     download(config, dates)
     return parse(config, dates)
 
@@ -30,13 +31,13 @@ def download(config, dates):
         # the apple date is offset by a quarter
         appleDate = actualDate + relativedelta(months=3)
 
-        print(f'Getting data for {date.year}-{date.month}', end='')
-        print(f' ({appleDate.year}-{appleDate.month:02d} in Apple Time)')
-
         outpath = 'tmp/' + filename(date)
         # skip this file if we have it already
         if os.path.exists(outpath):
             continue
+
+        print(f'Fetching data for {date.year}-{date.month}', end='')
+        print(f' ({appleDate.year}-{appleDate.month:02d} in Apple Time)')
 
         print('Connecting to AppStore Connect API...')
         api.download_finance_reports(filters={
@@ -53,8 +54,10 @@ def parse(config, dates):
     output = dict()
 
     for date in dates:
+        print(f'\tParsing data for {date.year}-{date.month}... ', end='')
         key = date.year + '-' + date.month
         output[key] = parseSingle(config, date)
+        print('done!')
 
     return output
 
