@@ -1,22 +1,20 @@
 import csv
 from utils import TransactionCollection
 from utils import format_currency
-from utils import format_count
 from decimal import Decimal
 from collections import defaultdict
 import os
-import urllib.request
-import zipfile
-import subprocess
-import glob
 from io import StringIO
 import os.path
-
 from googleplay import download
+import re
+from utils import TaxMonth
+
+merge_spacer = '\n\n--------------------------------------------------------------\n\n'
 
 
 def get(config, dates, packagemap):
-    print(f'Google Play Pass')
+    print('Google Play Pass')
 
     data = []
 
@@ -80,7 +78,8 @@ def parseSingle(entry, date, packagemap):
         product[key].sum += Decimal(row['Amount (Merchant Currency)'])
         product[key].count += 1
 
-    text = f'Revenue report for Google Play Pass {date.year}-{date.month}\n\n'
+    text = 'Revenue report for Google Play Pass '
+    text += f'{date.year}-{date.month}\n\n'
 
     text += summarize(overall)
 
@@ -88,7 +87,7 @@ def parseSingle(entry, date, packagemap):
     text += '\n\n'
     text += 'PER PRODUCT (including charges, fees, taxes, and refunds):\n\n'
     for key, value in products.items():
-        name = packagemap.get(key, fallback=key);
+        name = packagemap.get(key, fallback=key)
         text += summarizeProduct(name, value)
 
     text += '\n\n'
@@ -116,11 +115,61 @@ def summarize(collection):
 
 def summarizeProduct(name, collection):
     sum = Decimal(0)
-    count = int(0)
-
     for key, value in collection.items():
-        if key == 'Charge':
-            count = value.count
         sum += value.sum
 
     return f'{name.ljust(25)}{format_currency(sum)}\n'
+
+
+def adjustTaxMonth(date, month_delta):
+    year = int(date.year)
+    month = int(date.month) + month_delta
+
+    while month < 1:
+        year -= 1
+        month += 12
+
+    while month > 12:
+        year += 1
+        month -= 12
+
+    return TaxMonth(str(year), str(month).zfill(2))
+
+
+def parseTaxMonth(str):
+    return TaxMonth(str[0:4], str[5:7])
+
+
+def merge(playstore, playpass):
+    # output is a dictionary with the month as key
+    # and the generated report as value
+    output = dict()
+
+    for month, monthData in playstore.items():
+        pay_date = parseTaxMonth(month)
+        pay_date = adjustTaxMonth(pay_date, +1)
+
+        output[month] = 'Report for Google Play as paid on '
+        output[month] += f'{pay_date.year}-{pay_date.month}\n\n'
+
+        output[month] += monthData + merge_spacer
+
+    for month, monthData in playpass.items():
+        pass_date = parseTaxMonth(month)
+        pass_date = adjustTaxMonth(pass_date, +1)
+        if pass_date.key() not in output:
+            continue
+        output[pass_date.key()] += monthData
+
+    for month, monthData in output.items():
+        # parse any lines that say Payout
+        payouts = re.findall(r'Payout\W+([\d ,]+) ', monthData)
+        sum = Decimal(0)
+        for payout in payouts:
+            stripped = payout.replace(',', '.').replace(' ', '')
+            decimal = Decimal(stripped)
+            sum += decimal
+
+        output[month] += merge_spacer + 'Total Payout:'.ljust(25) + f'{format_currency(sum)}\n'
+
+    return output

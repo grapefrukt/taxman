@@ -59,13 +59,18 @@ if not os.path.exists(outPath):
 output = defaultdict(dict)
 
 if config['appstore']['enabled'] == 'true':
-    output['appstore'] = itunes.get(config['appstore'], dates)
+    output['app store'] = itunes.get(config['appstore'], dates)
 
 if config['google']['enabled'] == 'true':
-    output['googleplay'] = googleplay.get(config['google'], dates)
+    output['google play store'] = googleplay.get(config['google'], dates)
 
 if config['google']['play_pass_enabled'] == 'true':
-    output['googleplay-pass'] = googleplaypass.get(config['google'], dates, config['packages'])
+    output['google play pass'] = googleplaypass.get(config['google'], dates, config['packages'])
+
+if config['google']['enabled'] == 'true' and config['google']['play_pass_enabled'] == 'true':
+    output['google play'] = googleplaypass.merge(output['google play store'], output['google play pass'])
+    del output['google play store']
+    del output['google play pass']
 
 for platform, platformData in output.items():
     platformPath = f'{outPath}/{platform}'

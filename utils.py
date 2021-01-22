@@ -16,6 +16,9 @@ class TaxMonth(NamedTuple):
     year: str
     month: str
 
+    def key(self):
+        return f'{self.year}-{self.month}'
+
 
 def format_currency(value):
     return '{:16,.2f} SEK'.format(value).replace(',', ' ').replace('.', ',')
