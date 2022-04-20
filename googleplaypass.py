@@ -23,10 +23,15 @@ def get(config, dates, packagemap):
 
     for date in dates:
         filename = f'tmp/play_pass_earnings_{date.year}{date.month}.csv'
+        file_exists = os.path.exists(filename)
 
-        if not os.path.exists(filename):
+        if not file_exists:
             print('\tFetching data from Google...')
-            download(config, date, 'play_pass_earnings')
+            file_exists = download(config, date, 'play_pass_earnings')
+
+        if not file_exists:
+            print(f'\tNo data for {date.year}-{date.month}, returning empty')
+            return dict()
 
         print(f'\tParsing data for {date.year}-{date.month}... ', end='')
         data.append(open(filename, encoding="utf8").read(),)

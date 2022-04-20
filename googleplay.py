@@ -52,9 +52,11 @@ def download(config, date, path):
         )[0]
     except IndexError:
         print('\tNo data found for {0}{1}'.format(date.year, date.month))
+        return False
     else:
         z = zipfile.ZipFile(zippath)
         z.extractall('tmp')
+        return True
 
 
 # takes a list of data, data is an array of csv strings per month
