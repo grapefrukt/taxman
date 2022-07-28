@@ -3,6 +3,7 @@ import googleplay
 import googleplaypass
 import itunes
 import os.path
+from os.path import exists as file_exists
 import argparse
 from collections import defaultdict
 from utils import TaxMonth
@@ -79,9 +80,29 @@ for platform, platformData in output.items():
 
     for month, monthData in platformData.items():
         path = f'{platformPath}/{month}.txt'
-        f = open(path, 'w+')
-        f.write(monthData)
-        f.close()
+
+        # to make things easier below, we create the output file here, if it does not already exist
+        if not file_exists(path): 
+            with open(path, 'x') as f:
+                f.write('')
+
+        # then we can open it in read+ mode, which allows us to also write if we need to
+        # there is no mode that will do this AND create the file if it doesn't exist
+        with open(path, 'r+') as f:
+            old_report = f.read()
+
+            if config['output']['overwrite'] == 'false' and old_report != monthData and old_report != "" : 
+                print(f'{path} was already generated and is different from generated report, will not overwrite')
+            elif config['output']['overwrite'] == 'false' and old_report == monthData : 
+                # generated report was same as already present report, do nothing
+                print(f'{path} was already generated and is identical to generated report')
+            else :
+                # seek to beginning of file again (because we read)
+                f.seek(0)
+                f.write(monthData)
+                # finally truncate, should this new report be shorter
+                f.truncate()
+                print(f'{path} written')
 
         if config['output']['verbose'] == 'true':
             print(monthData)

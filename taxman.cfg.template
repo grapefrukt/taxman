@@ -23,6 +23,8 @@ play_pass_enabled: true
 [output]
 # this is the folder where your reports will be output, it will be created if it does not already exist
 path: tmp/output
+verbose: false
+overwrite: false
 
 # remap package names (used in play pass revenue reports) to product names, 
 [packages]
