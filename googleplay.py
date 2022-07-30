@@ -44,7 +44,7 @@ def download(config, date, path):
     url += f'/{path}/{path}_{date.year}{date.month}*.zip'
     subprocess.call(f'python gsutil/gsutil.py cp {url} tmp')
 
-    print('\tExtrating data...')
+    print('\tExtracting data...')
 
     try:
         zippath = glob.glob(
