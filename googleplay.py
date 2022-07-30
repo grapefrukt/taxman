@@ -11,6 +11,7 @@ import subprocess
 import glob
 from io import StringIO
 import os.path
+import pandas
 
 
 def get(config, dates):
@@ -31,9 +32,18 @@ def get(config, dates):
             print('\tFetching data from Google...')
             download(config, date, 'earnings')
 
-        print(f'\tParsing data for {date.year}-{date.month}... ', end='')
-        data.append(open(filename, encoding="utf8").read(),)
-        print('done!')
+
+        paths = glob.glob(os.path.join('tmp', f'{date.year}{date.month}*.csv'))
+        
+        print(f'\tParsing data for {date.year}-{date.month} ({len(paths)} files)... ', end='')
+
+        # combine all files in the list
+        combined_csv = pandas.concat([pandas.read_csv(f) for f in paths ])
+        # export to csv
+        combined_path = os.path.join('tmp', f'{date.year}{date.month}.csv')
+        combined_csv.to_csv(combined_path, index=False, encoding='utf-8')
+
+        data.append(open(combined_path, encoding="utf8").read())
 
     return parse(data, dates)
 
@@ -47,15 +57,33 @@ def download(config, date, path):
     print('\tExtracting data...')
 
     try:
-        zippath = glob.glob(
+        # a single month may have more than one zip, just to make our life harder
+        # we use a wildcard to match them all here
+        zippaths = glob.glob(
             os.path.join('tmp', f'{path}_{date.year}{date.month}*.zip')
-        )[0]
+        )
     except IndexError:
-        print('\tNo data found for {0}{1}'.format(date.year, date.month))
+        print(f'\tNo data found for {date.year}{date.month}')
         return False
     else:
-        z = zipfile.ZipFile(zippath)
-        z.extractall('tmp')
+        # iterate over all files in the zip, extracting them one by one
+        # i have never seen a report have more than one file in its zip,
+        # but this gives us access to the file name of the file we're extracting
+        # we need this so we can rename it immediately after extracting
+        
+        # this is needed because when a report comes in multiple zips, the contained csv's
+        # will have the SAME name, meaning they'll overwrite eachother!
+
+        for idx, path in enumerate(zippaths) :
+            with zipfile.ZipFile(path, 'r') as zfile :
+                filenames = zfile.namelist()
+                for filename in filenames :
+                    zfile.extract(filename, 'tmp')
+                    oldname = os.path.join('tmp', filename)
+                    newname = os.path.join('tmp', f'{date.year}{date.month}-{idx}.csv')
+                    # remove the new file if it exists, as to not cause errors
+                    if os.path.exists(newname) : os.remove(newname)
+                    os.rename(oldname, newname)
         return True
 
 
