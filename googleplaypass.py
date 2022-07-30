@@ -22,7 +22,7 @@ def get(config, dates, packagemap):
         os.makedirs('tmp')
 
     for date in dates:
-        filename = f'tmp/play_pass_earnings_{date.year}{date.month}.csv'
+        filename = f'tmp/play_pass_earnings{date.year}{date.month}-0.csv'
         file_exists = os.path.exists(filename)
 
         if not file_exists:

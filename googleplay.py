@@ -33,7 +33,7 @@ def get(config, dates):
             download(config, date, 'earnings')
 
 
-        paths = glob.glob(os.path.join('tmp', f'{date.year}{date.month}*.csv'))
+        paths = glob.glob(os.path.join('tmp', f'earnings{date.year}{date.month}*.csv'))
         
         print(f'\tParsing data for {date.year}-{date.month} ({len(paths)} files)... ', end='')
 
@@ -74,13 +74,13 @@ def download(config, date, path):
         # this is needed because when a report comes in multiple zips, the contained csv's
         # will have the SAME name, meaning they'll overwrite eachother!
 
-        for idx, path in enumerate(zippaths) :
-            with zipfile.ZipFile(path, 'r') as zfile :
+        for idx, zippath in enumerate(zippaths) :
+            with zipfile.ZipFile(zippath, 'r') as zfile :
                 filenames = zfile.namelist()
                 for filename in filenames :
                     zfile.extract(filename, 'tmp')
                     oldname = os.path.join('tmp', filename)
-                    newname = os.path.join('tmp', f'{date.year}{date.month}-{idx}.csv')
+                    newname = os.path.join('tmp', f'{path}{date.year}{date.month}-{idx}.csv')
                     # remove the new file if it exists, as to not cause errors
                     if os.path.exists(newname) : os.remove(newname)
                     os.rename(oldname, newname)
