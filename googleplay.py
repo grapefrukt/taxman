@@ -1,4 +1,5 @@
 import csv
+import datetime
 from utils import TransactionCollection
 from utils import format_currency
 from utils import format_count
@@ -26,7 +27,7 @@ def get(config, dates):
         os.makedirs('tmp')
 
     for date in dates:
-        filename = f'tmp/PlayApps_{date.year}{date.month}.csv'
+        filename = f'tmp/{date.year}{date.month}.csv'
 
         if not os.path.exists(filename):
             print('\tFetching data from Google...')
@@ -35,7 +36,7 @@ def get(config, dates):
 
         paths = glob.glob(os.path.join('tmp', f'earnings{date.year}{date.month}*.csv'))
         
-        print(f'\tParsing data for {date.year}-{date.month} ({len(paths)} files)... ', end='')
+        print(f'\tParsing data for {date.year}-{date.month} ({len(paths)} files)... ')
 
         # combine all files in the list
         combined_csv = pandas.concat([pandas.read_csv(f) for f in paths ])
@@ -63,7 +64,7 @@ def download(config, date, path):
             os.path.join('tmp', f'{path}_{date.year}{date.month}*.zip')
         )
     except IndexError:
-        print(f'\tNo data found for {date.year}{date.month}')
+        print(f'\t⚠️ No data found for {date.year}{date.month}')
         return False
     else:
         # iterate over all files in the zip, extracting them one by one
@@ -114,6 +115,12 @@ def parseSingle(entry, date):
     products = dict(defaultdict(TransactionCollection))
 
     for row in input_file:
+        timestamp = datetime.datetime.strptime(row['Transaction Date'], '%b %d, %Y').date()
+        # the date tuple here has the month as a string with a leading zero, the timestamp does not, hence the int-cast
+        if int(timestamp.month) != int(date.month) and timestamp.year != date.year :
+            print(f'⚠️ transaction in wrong month! expected: {date.year}-{date.month} got: {timestamp.year}-{timestamp.month}')
+            continue
+
         # the dictionary is a defaultdict, so we can write to any key and it
         # will automatically populate that with default values if it's the
         # first time
@@ -139,6 +146,8 @@ def parseSingle(entry, date):
     text += '\n\n'
     text += 'PER PRODUCT (including charges, fees, taxes, and refunds):\n\n'
     for key, value in products.items():
+        # tax line is like a product, but has an empty key, skip it
+        if key == '': continue
         text += summarizeProduct(key, value)
 
     text += '\n\n'
@@ -159,7 +168,7 @@ def summarize(collection):
     sum = Decimal(0)
     for key, value in collection.items():
         text += f'{key.ljust(25)}{format_currency(value.sum)}'
-        if key == 'Charge':
+        if key == 'Charge' or key == 'Charge refund':
             text += format_count(value.count).rjust(15)
         text += '\n'
         sum += value.sum
@@ -172,7 +181,9 @@ def summarizeProduct(name, collection):
 
     for key, value in collection.items():
         if key == 'Charge':
-            count = value.count
+            count += value.count
+        elif key == 'Charge refund':
+            count -= value.count
         sum += value.sum
 
     return f'{name.ljust(25)}{format_currency(sum)}{format_count(count)}\n'
@@ -186,7 +197,7 @@ def setup():
             'http://storage.googleapis.com/pub/gsutil.zip',
             'gsutil.zip')
     except IOError as e:
-        print('Can\'t retrieve gsutil.zip: {0}'.format(e))
+        print('⚠️ Can\'t retrieve gsutil.zip: {0}'.format(e))
         return
 
     print('Extracting gsutil...')
@@ -194,7 +205,7 @@ def setup():
     try:
         z = zipfile.ZipFile('gsutil.zip')
     except zipfile.error:
-        print('Bad zipfile')
+        print('⚠️ Bad zipfile')
         return
 
     z.extractall('.')
