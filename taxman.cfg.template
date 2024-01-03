@@ -12,6 +12,8 @@ vendor_id: 85851972
 enabled: false
 
 [google]
+# install the gcloud utility and provide the executable path here
+gcloud_path: c:\Users\grapefrukt\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud
 # at the end of your financial reports in the google play developer console is a gs:// url
 # your bucket id is the 20 digit number at the end of that
 bucket_id: 00000000000000000000

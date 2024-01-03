@@ -18,9 +18,6 @@ import pandas
 def get(config, dates):
     print(f'Google Play')
 
-    if not os.path.isfile('gsutil/gsutil.py'):
-        googleplay.setup()
-
     data = []
 
     if not os.path.exists('tmp'):
@@ -53,7 +50,8 @@ def download(config, date, path):
     print(f'Fetching data for {date.year}-{date.month}')
     url = f'gs://pubsite_prod_rev_{config.get("bucket_id")}'
     url += f'/{path}/{path}_{date.year}{date.month}*.zip'
-    subprocess.call(f'python gsutil/gsutil.py cp {url} tmp')
+    print(f'"{config.get("gcloud_path")}" storage cp {url} tmp')
+    subprocess.call(f'"{config.get("gcloud_path")}" storage cp {url} tmp')
 
     print('\tExtracting data...')
 
