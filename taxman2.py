@@ -2,6 +2,8 @@ import argparse
 from datetime import datetime, timedelta
 from taxmonth import TaxMonth
 
+from platforms.nintendo import PlatformNintendo
+
 class TaxMan:
 	def __init__(self):
 		self.parser = argparse.ArgumentParser(description="Parse start date, optional end date, optional months, and platforms")
@@ -58,11 +60,9 @@ class TaxMan:
 
 		return start, end, months, platforms
 
-
-# Example usage
 if __name__ == "__main__":
 	taxman = TaxMan()
-	start, end, num_months, platforms = taxman.parse_args()
+	start, end, num_months, active_platforms = taxman.parse_args()
 
 	months = TaxMonth.make_range(start, end)
 
@@ -71,8 +71,14 @@ if __name__ == "__main__":
 	print(f"count:     {num_months}")
 	print(f"months:    {', '.join(map(str, months))}")
 
-	# Print platforms if provided
-	if platforms:
-		print(f"platforms: {', '.join(platforms)}")
+	# Print active_platforms if provided
+	if active_platforms:
+		print(f"active_platforms: {', '.join(active_platforms)}")
 	else:
-		print(f"platforms: none")
+		print(f"active_platforms: none")
+
+	platforms = {
+		'nintendo': PlatformNintendo()
+	}
+
+
