@@ -9,6 +9,12 @@ class TaxMonth:
         # Format the year and month nicely when printed
         return f"{self.year}-{self.month:02}"
 
+    def equals(self, other):
+        return self.year == other.year and self.month == other.month
+
+    def is_after(self, other):
+        return self.date > other.date
+
     @property
     def year(self):
         return self.date.year
