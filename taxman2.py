@@ -37,15 +37,18 @@ class TaxMan:
 			if not end:
 				raise ValueError("Invalid end date format. Use YYYY-MM.")
 		
-		# Parse months (optional)
-		months = args.months if args.months else 0
+		# Parse months
+		months = args.months if args.months else 1
+		if months < 1 : months = 1
 
-		if start and end and months :
+		if not start and not end:
+			raise ValueError("You must supply either a start or end date.")
+		elif start and end and months :
 			raise ValueError("Months makes no sense when start and end date was supplied.")
 		elif start and not end : 
-			end = start.add_months(months)
+			end = start.add_months(months - 1)
 		elif end and not start : 
-			start = end.add_months(-months)
+			start = end.add_months(-months + 1)
 
 		if not start.equals(end) and not end.is_after(start) :
 			raise ValueError("End date must be later than start date.")
