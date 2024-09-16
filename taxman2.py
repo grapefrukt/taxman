@@ -62,14 +62,17 @@ class TaxMan:
 # Example usage
 if __name__ == "__main__":
 	taxman = TaxMan()
-	start, end, months, platforms = taxman.parse_args()
+	start, end, num_months, platforms = taxman.parse_args()
 
-	print(f"start:  {start}")
-	print(f"end:    {end}")
-	print(f"months: {months}")
+	months = TaxMonth.make_range(start, end)
+
+	print(f"start:     {start}")
+	print(f"end:       {end}")
+	print(f"count:     {num_months}")
+	print(f"months:    {', '.join(map(str, months))}")
 
 	# Print platforms if provided
 	if platforms:
 		print(f"platforms: {', '.join(platforms)}")
 	else:
-		print("no platforms specified.")
+		print(f"platforms: none")
