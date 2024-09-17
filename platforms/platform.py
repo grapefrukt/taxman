@@ -36,8 +36,8 @@ class Platform(ABC):
 		return os.path.isfile(self.month_to_path(month))
 
 	def check_month_excluded(self, month:TaxMonth, index = 0) -> bool:
-		with open(self.month_to_path(month), 'r') as file:
-			return 'EXCLUDED' in file.read().rstrip().lstrip()
+		with open(self.month_to_path(month), 'r', encoding='utf8') as file:
+			return 'EXCLUDED' in file.readline().rstrip().lstrip()
 
 	def month_to_path(self, month:TaxMonth, index = 0) -> str:
 		return f'data/{self.name}/{month}.csv'
