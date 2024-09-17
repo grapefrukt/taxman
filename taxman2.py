@@ -106,15 +106,20 @@ if __name__ == "__main__":
 				case ParseResult.MISSING:
 					print(f'{platform.name} is missing {month}')
 
-	exit()
-	df = df.groupby(['title', 'month'])
+	#df = df.groupby(['title', 'month'])
+	#df = df.agg({
+	#	'units':'sum', 
+	#	'sek':'sum',
+	#	'platform': 'first',
+	#})
+	#df = df.reset_index()
+	#df = df.sort_values(by=['month', 'title'])
+
+	df = df.groupby(['platform', 'title'])
 	df = df.agg({
 		'units':'sum', 
 		'sek':'sum',
-		'platform': 'first'
 	})
-	df = df.reset_index()
-	df = df.sort_values(by=['month', 'title'])
 
 	print(df)
 
