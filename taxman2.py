@@ -2,6 +2,7 @@ import argparse
 from datetime import datetime, timedelta
 from taxmonth import TaxMonth
 
+from platforms.platform import *
 from platforms.nintendo import PlatformNintendo
 
 class TaxMan:
@@ -40,12 +41,13 @@ class TaxMan:
 				raise ValueError("Invalid end date format. Use YYYY-MM.")
 		
 		# Parse months
-		months = args.months if args.months else 1
+		has_months = args.months
+		months =  args.months if has_months else 1
 		if months < 1 : months = 1
 
 		if not start and not end:
 			raise ValueError("You must supply either a start or end date.")
-		elif start and end and months :
+		elif start and end and has_months :
 			raise ValueError("Months makes no sense when start and end date was supplied.")
 		elif start and not end : 
 			end = start.add_months(months - 1)
@@ -80,5 +82,17 @@ if __name__ == "__main__":
 	platforms = {
 		'nintendo': PlatformNintendo()
 	}
+
+	for key, platform in platforms.items():
+		if key not in active_platforms: continue
+		for month in months:
+			result = platform.parse(month)
+			match result :
+				case ParseResult.OK:
+					print(f'{platform.name} parsed {month} ok')
+				case ParseResult.EXCLUDED:
+					print(f'{platform.name} exluded {month}')
+				case ParseResult.MISSING:
+					print(f'{platform.name} is missing {month}')
 
 
