@@ -33,11 +33,12 @@ class Platform(ABC):
 		pass
 
 	def check_month_present(self, month:TaxMonth, index = 0) -> bool:
-		return os.path.isfile(self.month_to_path(month))
+		return os.path.isfile(self.month_to_path(month, index))
 
 	def check_month_excluded(self, month:TaxMonth, index = 0) -> bool:
 		with open(self.month_to_path(month), 'r', encoding='utf8') as file:
 			return 'EXCLUDED' in file.readline().rstrip().lstrip()
 
 	def month_to_path(self, month:TaxMonth, index = 0) -> str:
+		if index > 0 : return f'data/{self.name}/{month}-{index}.csv'
 		return f'data/{self.name}/{month}.csv'
