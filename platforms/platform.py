@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 import os.path
+import pandas as pd
 from taxmonth import TaxMonth
 
 class ParseResult(Enum):
@@ -20,15 +21,15 @@ class Platform(ABC):
 	def download(self, month:TaxMonth) -> ParseResult:
 		pass
 
-	def parse(self, month:TaxMonth) -> ParseResult:
+	def parse(self, month:TaxMonth) -> (ParseResult, pd.DataFrame):
 		if not self.check_month_present(month) : 
-			return ParseResult.MISSING
+			return ParseResult.MISSING, None
 		if self.check_month_excluded(month) : 
-			return ParseResult.EXCLUDED
+			return ParseResult.EXCLUDED, None
 		return self._parse(month)
 
 	@abstractmethod
-	def _parse(self, month:TaxMonth) -> ParseResult:
+	def _parse(self, month:TaxMonth) -> (ParseResult, pd.DataFrame):
 		pass
 
 	def check_month_present(self, month:TaxMonth, index = 0) -> bool:

@@ -83,16 +83,29 @@ if __name__ == "__main__":
 		'nintendo': PlatformNintendo()
 	}
 
+	df = pd.DataFrame()
+
 	for key, platform in platforms.items():
 		if key not in active_platforms: continue
 		for month in months:
 			result = platform.parse(month)
-			match result :
+			match result[0]:
 				case ParseResult.OK:
 					print(f'{platform.name} parsed {month} ok')
+					df = pd.concat([df, result[1]])
 				case ParseResult.EXCLUDED:
 					print(f'{platform.name} exluded {month}')
 				case ParseResult.MISSING:
 					print(f'{platform.name} is missing {month}')
 
+	df = df.groupby(['title', 'month'])
+	df = df.agg({
+		'units':'sum', 
+		'sek':'sum',
+		'platform': 'first'
+	})
+	df = df.reset_index()
+	df = df.sort_values(by=['month', 'title'])
+
+	print(df)
 

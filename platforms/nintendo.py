@@ -10,17 +10,15 @@ class PlatformNintendo(Platform):
 		pass
 
 	def _parse(self, month):
-		table = pd.read_csv(self.month_to_path(month))
-		cols = ['Sales Units', 'Final Payable Amount']
-		table = table.sort_values(by='Title')
-		table = table.groupby(('Title'))
-		table = table[cols].sum(numeric_only=True).reset_index()
+		df = pd.read_csv(self.month_to_path(month))
+		cols = ['Title', 'Sales Units', 'Final Payable Amount', 'Sales Period']
+		df = df.filter(cols)
+		df['platform'] = self.name
+		df = df.rename(columns={
+			'Title' : 'title',
+			'Sales Units' : 'units',
+			'Final Payable Amount' : 'sek',
+			'Sales Period' : 'month'
+		})
 
-		#for index, row in table.iterrows() :
-		#	label = ''
-		#	if first : label = f'{result.group(1)}-{result.group(2)}'
-		#	print(f"{label};{row['Title']};{row['Sales Units']};{row['Final Payable Amount']:,2f}")
-		#	first = False
-
-
-		return ParseResult.OK
+		return ParseResult.OK, df
