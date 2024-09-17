@@ -11,6 +11,7 @@ class PlatformNintendo(Platform):
 
 	def _parse(self, month):
 		df = pd.read_csv(self.month_to_path(month))
+		# todo: update to use usecols instead
 		cols = ['Title', 'Sales Units', 'Final Payable Amount', 'Sales Period']
 		df = df.filter(cols)
 		df['platform'] = self.name

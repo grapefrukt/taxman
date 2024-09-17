@@ -10,7 +10,6 @@ class ParseResult(Enum):
 	EXCLUDED = 3 # file was not present, but wasn't supposed to be (sometimes happens when there are no sales for a month)
 	MISSING  = 4 # file was not present, in a bad way
 
-
 class Platform(ABC):
 	@property
 	@abstractmethod
@@ -32,7 +31,11 @@ class Platform(ABC):
 	def _parse(self, month:TaxMonth) -> (ParseResult, pd.DataFrame):
 		pass
 
-	def check_month_present(self, month:TaxMonth, index = 0) -> bool:
+	# if index is -1 we check all files that will be needed for this mont
+	# if index is 0 we check the first file and so on
+	# for most platforms except appstore, we need one or sometimes more files
+	# for appstore we always need two
+	def check_month_present(self, month:TaxMonth, index = -1) -> bool:
 		return os.path.isfile(self.month_to_path(month, index))
 
 	def check_month_excluded(self, month:TaxMonth, index = 0) -> bool:

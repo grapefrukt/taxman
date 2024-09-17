@@ -6,6 +6,7 @@ from platforms.platform import *
 from platforms.nintendo import PlatformNintendo
 from platforms.playpass import PlatformPlayPass
 from platforms.playstore import PlatformPlayStore
+from platforms.appstore import PlatformAppStore
 
 class TaxMan:
 	def __init__(self):
@@ -82,9 +83,10 @@ if __name__ == "__main__":
 		print(f"active_platforms: none")
 
 	platforms = {
-		'nintendo': PlatformNintendo(),
-		'play-pass': PlatformPlayPass(),
+		'nintendo'  : PlatformNintendo(),
+		'play-pass' : PlatformPlayPass(),
 		'play-store': PlatformPlayStore(),
+		'appstore'  : PlatformAppStore(),
 	}
 
 	for platform in active_platforms:

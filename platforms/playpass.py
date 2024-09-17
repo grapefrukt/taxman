@@ -11,6 +11,7 @@ class PlatformPlayPass(Platform):
 
 	def _parse(self, month):
 		df = pd.read_csv(self.month_to_path(month))
+		# todo: update to use usecols instead
 		cols = ['Start Date', 'Product Id', 'Amount (Merchant Currency)']
 		df = df.filter(cols)
 		df['platform'] = self.name

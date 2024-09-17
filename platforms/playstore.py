@@ -21,6 +21,7 @@ class PlatformPlayStore(Platform):
 			index += 1
 		
 		# get rid of all the columns we don't need
+		# todo: update to use usecols instead
 		cols = ['Description', 'Transaction Date', 'Product Title', 'Amount (Merchant Currency)']
 		df = df.filter(cols)
 		
