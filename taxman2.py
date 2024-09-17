@@ -4,6 +4,7 @@ from taxmonth import TaxMonth
 
 from platforms.platform import *
 from platforms.nintendo import PlatformNintendo
+from platforms.playpass import PlatformPlayPass
 
 class TaxMan:
 	def __init__(self):
@@ -80,8 +81,13 @@ if __name__ == "__main__":
 		print(f"active_platforms: none")
 
 	platforms = {
-		'nintendo': PlatformNintendo()
+		'nintendo': PlatformNintendo(),
+		'play-pass': PlatformPlayPass(),
 	}
+
+	for platform in active_platforms:
+		if platform not in platforms: 
+			raise ValueError(f'Unknown platform: {platform}')
 
 	df = pd.DataFrame()
 
