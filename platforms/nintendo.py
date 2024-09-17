@@ -1,5 +1,5 @@
-from platforms.platform import *
 import pandas as pd
+from platforms.platform import *
 
 class PlatformNintendo(Platform):
 	@property

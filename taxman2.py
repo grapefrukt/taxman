@@ -5,6 +5,7 @@ from taxmonth import TaxMonth
 from platforms.platform import *
 from platforms.nintendo import PlatformNintendo
 from platforms.playpass import PlatformPlayPass
+from platforms.playstore import PlatformPlayStore
 
 class TaxMan:
 	def __init__(self):
@@ -83,6 +84,7 @@ if __name__ == "__main__":
 	platforms = {
 		'nintendo': PlatformNintendo(),
 		'play-pass': PlatformPlayPass(),
+		'play-store': PlatformPlayStore(),
 	}
 
 	for platform in active_platforms:
@@ -104,6 +106,7 @@ if __name__ == "__main__":
 				case ParseResult.MISSING:
 					print(f'{platform.name} is missing {month}')
 
+	exit()
 	df = df.groupby(['title', 'month'])
 	df = df.agg({
 		'units':'sum', 
