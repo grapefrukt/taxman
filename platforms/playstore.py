@@ -41,7 +41,6 @@ class PlatformPlayStore(Platform):
 		# each row represents one sale
 		df['units'] = 1
 
-		df['platform'] = self.name
 		df['Transaction Date'] = df['Transaction Date'].apply(self.format_date)
 		df = df.rename(columns={
 			'Product Title' : 'title',

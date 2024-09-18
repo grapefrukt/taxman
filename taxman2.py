@@ -102,6 +102,9 @@ if __name__ == "__main__":
 			match result[0]:
 				case ParseResult.OK:
 					print(f'{platform.name} parsed {month} ok')
+					# tag this data with the platform it came from
+					result[1]['platform'] = platform.name
+					# then concat it to our big data table
 					df = pd.concat([df, result[1]])
 				case ParseResult.EXCLUDED:
 					print(f'{platform.name} exluded {month}')

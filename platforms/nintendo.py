@@ -14,7 +14,6 @@ class PlatformNintendo(Platform):
 		# todo: update to use usecols instead
 		cols = ['Title', 'Sales Units', 'Final Payable Amount', 'Sales Period']
 		df = df.filter(cols)
-		df['platform'] = self.name
 		df = df.rename(columns={
 			'Title' : 'title',
 			'Sales Units' : 'units',

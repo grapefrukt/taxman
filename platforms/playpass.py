@@ -14,7 +14,6 @@ class PlatformPlayPass(Platform):
 		# todo: update to use usecols instead
 		cols = ['Start Date', 'Product Id', 'Amount (Merchant Currency)']
 		df = df.filter(cols)
-		df['platform'] = self.name
 		df['units'] = 0
 
 		remap = {
