@@ -68,7 +68,7 @@ class PlatformAppStore(Platform):
 		df_sales = df_sales.replace({'title': {
 			'com.grapefrukt.games.bore' : 'holedown',
 			'com.grapefrukt.games.twofold' : 'twofold',
-			'com.grapefrukt.games.tilebreaker' : 'subpar pool',
+			'tilebreaker' : 'subpar pool',
 			'com.grapefrukt.games.rymdkapsel1' : 'rymdkapsel',
 			'extended-universe' : 'extended universe bundle',
 		}})
@@ -91,9 +91,14 @@ class PlatformAppStore(Platform):
 		df_sales = df_sales.groupby(['title'])
 		df_sales = df_sales.agg({	
 			'units':'sum', 
-			'earned':'sum',
 			'sek' : 'sum',
 		})
+		
+		# tag all rows with this month too
+		df_sales['month'] = month
+
+		# reset the index so we can merge with everything else later
+		df_sales.reset_index(inplace=True)
 
 		return ParseResult.OK, df_sales
 
