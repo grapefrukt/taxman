@@ -28,77 +28,86 @@ class PlatformAppStore(Platform):
 		
 		io_payout = StringIO(csv_payout)
 		df_payout = pd.read_csv(io_payout, usecols=['Country or Region (Currency)', 'Earned', 'Proceeds'])
-
-		df_payout['Country or Region (Currency)'] = df_payout['Country or Region (Currency)'].apply(self.region_to_currency)
-
+		
+		# rename the fields to be shorter
 		df_payout = df_payout.rename(columns={
 			'Country or Region (Currency)' : 'currency',
 			'Earned' : 'earned',
 			'Proceeds' : 'sek',
 		})
 
+		# shorten the region/currency field to be just currency
+		df_payout['currency'] = df_payout['currency'].apply(self.region_to_currency)
+
+		# some currencies (usd) appear multiple times, idk if they use a slightly different exchange rate
+		# or if it's rounding, for our purposes, we can sum these and use them as one and the same
+		df_payout = df_payout.groupby('currency')
+		df_payout = df_payout.agg({
+			'earned':'sum', 
+			'sek':'sum',
+		})
+
+		# calculate the exchange rate per currency, this is why we loaded this data in the first place
 		df_payout['exchange rate'] = df_payout['sek'] / df_payout['earned']
-		
-		print(df_payout)
+
+		#print(df_payout)
 		
 		csv_sales = self.preprocess_sales(self.month_to_path(month, 1))
 		io_sales = StringIO(csv_sales)
-		df_sales  = pd.read_csv(io_sales, usecols=['Vendor Identifier', 'Quantity', 'Partner Share', 'Customer Currency'], sep='\t')
+		df_sales  = pd.read_csv(io_sales, usecols=['Vendor Identifier', 'Quantity', 'Extended Partner Share', 'Partner Share Currency'], sep='\t')
 
-		remap = {
+		# rename the fields to be shorter
+		df_sales = df_sales.rename(columns={
+			'Vendor Identifier' : 'title',
+			'Partner Share Currency' : 'currency',
+			'Extended Partner Share' : 'earned',
+			'Quantity' : 'units',
+		})
+
+		# remap the game titles
+		df_sales = df_sales.replace({'title': {
 			'com.grapefrukt.games.bore' : 'holedown',
 			'com.grapefrukt.games.twofold' : 'twofold',
 			'com.grapefrukt.games.tilebreaker' : 'subpar pool',
 			'com.grapefrukt.games.rymdkapsel1' : 'rymdkapsel',
 			'extended-universe' : 'extended universe bundle',
-		}
+		}})
 
-		df_sales = df_sales.rename(columns={
-			'Vendor Identifier' : 'title',
-			'Customer Currency' : 'currency',
-			'Partner Share' : 'earned',
-			'Quantity' : 'units',
-		})
-
-		df_sales = df_sales.replace({'title': remap})
-
+		# now we summarize the units and earnings per game per currency
+		# we have to do it beforehand, because they may be cases where all sales for a currency were returned
+		# in that case, the returned currency won't be in our lookup table and we'll have errors
+		# this way, those transactions will zero out and we'll know it's okay that currency is missing
 		df_sales = df_sales.groupby(['title', 'currency'])
 		df_sales = df_sales.agg({
 			'units':'sum', 
 			'earned':'sum',
 		})
-		df_sales.reset_index()
+		df_sales.reset_index(inplace=True)
 
-		print(df_sales)
+		# use the payout lookup to work out how much each game earned in each currency
+		df_sales['sek'] = df_sales.apply(lambda row: self.exchange_rate(row, df_payout), axis=1)
 
-		return
-
-		# the description column contains a unique id per transaction, we group by that to get a sum for each transaction
-		df = df.groupby('Description')
-		df = df.agg({
-			'Amount (Merchant Currency)':'sum', 
-			'Product Title':'first',
-			'Transaction Date': 'first'
+		# then we collapse all the per-game-per-currency earnings down into just per game
+		df_sales = df_sales.groupby(['title'])
+		df_sales = df_sales.agg({	
+			'units':'sum', 
+			'earned':'sum',
+			'sek' : 'sum',
 		})
 
-		# after the groupby and agg we turn this back into a normal dataframe
-		df = df.reset_index()
+		return ParseResult.OK, df_sales
 
-		# we're now done with the description column and can drop it
-		df = df.drop(columns=['Description'])
-		# each row represents one sale
-		df['units'] = 1
+	def exchange_rate(self, row, df_payout) :
+		# if something is sold in a currency and then all of it is returned
+		# that currency will be in the sales table, but not in the payout table (because that currency never got paid out)
+		# it may also be that there's tax or something funky meaning had a negative pay out despite no sales
+		# if the earned field is zero, we can safely return a zero exchange rate here
+		if row['earned'] == 0 : return 0
 
-		df['platform'] = self.name
-		df['Transaction Date'] = df['Transaction Date'].apply(self.format_date)
-		df = df.rename(columns={
-			'Product Title' : 'title',
-			'Transaction Date' : 'month',
-			'Product Id' : 'title',
-			'Amount (Merchant Currency)' : 'sek',
-		})
-
-		return ParseResult.OK, df
+		if not row['currency'] in df_payout.index :
+			print(f"missing exchange data for {row['currency']}, {row['earned']}")
+		# because this is an approximate value, we have to round it off here
+		return round(row['earned'] * df_payout.loc[row['currency']]['exchange rate'], 2)
 
 	def preprocess_payout(self, path) -> str :
 		processed = ''
