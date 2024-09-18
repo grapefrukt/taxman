@@ -64,17 +64,15 @@ class TaxMan:
 		# Get the platforms (optional)
 		platforms = args.platforms if args.platforms else []
 
-		return start, end, months, platforms
+		return TaxMonth.make_range(start, end), platforms
 
 if __name__ == "__main__":
 	taxman = TaxMan()
-	start, end, num_months, active_platforms = taxman.parse_args()
+	months, active_platforms = taxman.parse_args()
 
-	months = TaxMonth.make_range(start, end)
-
-	print(f"start:     {start}")
-	print(f"end:       {end}")
-	print(f"count:     {num_months}")
+	print(f"start:     {months[0]}")
+	print(f"end:       {months[-1]}")
+	print(f"count:     {len(months)}")
 	print(f"months:    {', '.join(map(str, months))}")
 
 	# Print active_platforms if provided
@@ -113,7 +111,6 @@ if __name__ == "__main__":
 				case ParseResult.MISSING:
 					print(f'{platform.name} is missing {month}')
 
-	exit()
 	#df = df.groupby(['title', 'month'])
 	#df = df.agg({
 	#	'units':'sum', 
@@ -123,10 +120,16 @@ if __name__ == "__main__":
 	#df = df.reset_index()
 	#df = df.sort_values(by=['month', 'title'])
 
+	#df = df.groupby(['platform', 'title'])
+	#df = df.agg({
+	#	'units':'sum', 
+	#	'sek':'sum',
+	#})
+
 	df = df.groupby(['platform', 'title'])
 	df = df.agg({
 		'units':'sum', 
-		'sek':'sum',
+		'usd':'sum',
 	})
 
 	print(df)
