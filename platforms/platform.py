@@ -11,6 +11,9 @@ class ParseResult(Enum):
 	MISSING  = 4 # file was not present, in a bad way
 
 class Platform(ABC):
+	def __init__(self, config):
+		self.config = config
+
 	@property
 	@abstractmethod
 	def name(self) -> str:
@@ -19,6 +22,10 @@ class Platform(ABC):
 	@property
 	def data_extension(self) -> str:
 		return '.csv'
+
+	@property
+	def data_path(self) -> str:
+		return f"{self.config['data_path']}/{self.name}"
 
 	@abstractmethod
 	def download(self, month:TaxMonth) -> ParseResult:
@@ -47,5 +54,5 @@ class Platform(ABC):
 			return 'EXCLUDED' in file.readline().rstrip().lstrip()
 
 	def month_to_path(self, month:TaxMonth, index = 0) -> str:
-		if index > 0 : return f'data/{self.name}/{month}-{index}.csv'
-		return f'data/{self.name}/{month}{self.data_extension}'
+		if index > 0 : return f"{self.data_path}/{month}-{index}.csv"
+		return f"{self.data_path}/{month}{self.data_extension}"

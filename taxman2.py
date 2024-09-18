@@ -1,4 +1,6 @@
 import argparse
+import yaml
+
 from datetime import datetime, timedelta
 from taxmonth import TaxMonth
 
@@ -75,6 +77,11 @@ if __name__ == "__main__":
 	print(f"count:     {len(months)}")
 	print(f"months:    {', '.join(map(str, months))}")
 
+	with open('config.yaml', 'r') as file:
+	    config = yaml.safe_load(file)
+
+	print(config['data_path'])
+
 	# Print active_platforms if provided
 	if active_platforms:
 		print(f"active_platforms: {', '.join(active_platforms)}")
@@ -82,11 +89,11 @@ if __name__ == "__main__":
 		print(f"active_platforms: none")
 
 	platforms = {
-		'nintendo'  : PlatformNintendo(),
-		'play-pass' : PlatformPlayPass(),
-		'play-store': PlatformPlayStore(),
-		'appstore'  : PlatformAppStore(),
-		'steam'     : PlatformSteam(),
+		'nintendo'  : PlatformNintendo(config),
+		'play-pass' : PlatformPlayPass(config),
+		'play-store': PlatformPlayStore(config),
+		'appstore'  : PlatformAppStore(config),
+		'steam'     : PlatformSteam(config),
 	}
 
 	for platform in active_platforms:
@@ -130,6 +137,7 @@ if __name__ == "__main__":
 	df = df.agg({
 		'units':'sum', 
 		'usd':'sum',
+		'sek':'sum',
 	})
 
 	print(df)
