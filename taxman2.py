@@ -10,21 +10,21 @@ from platforms.appstore import PlatformAppStore
 
 class TaxMan:
 	def __init__(self):
-		self.parser = argparse.ArgumentParser(description="Parse start date, optional end date, optional months, and platforms")
+		self.parser = argparse.ArgumentParser(description="Gets sales data from start date up to end date for specified platforms")
 		self.add_arguments()
 
 	def add_arguments(self):
 		# Add start date argument
-		self.parser.add_argument('--start', help='Start date in YYYY-MM format (optional)')
+		self.parser.add_argument('--start', '--from', help='Start date in YYYY-MM format (optional)')
 		
 		# Add optional end date argument
-		self.parser.add_argument('--end', help='End date in YYYY-MM format (optional)')
+		self.parser.add_argument('--end', '--to', help='End date in YYYY-MM format (optional)')
 		
 		# Add optional months argument
-		self.parser.add_argument('--months', type=int, help='Number of months (optional)')
+		self.parser.add_argument('--months', '--count', type=int, help='Number of months (optional)')
 
 		# Add platforms argument (multiple strings can be provided)
-		self.parser.add_argument('--platforms', nargs='+', help='List of platforms (optional)')
+		self.parser.add_argument('--platforms', '--platform', nargs='+', help='List of platforms (optional)')
 
 	def parse_args(self):
 		args = self.parser.parse_args()
