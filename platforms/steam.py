@@ -18,8 +18,13 @@ class PlatformSteam(Platform):
 		df = pd.read_html(self.month_to_path(month))
 		df = df[0]
 
-		# the table has multiple headers, this is annoying so we use this magic incantation to collapse them
-		df.columns = df.columns.map('{0[1]}'.format)
+		# early 2014 steam did not have the multi index tables, so this special case is needed
+		if isinstance(df.columns, pd.MultiIndex) :
+			# the table has multiple headers, this is annoying so we use this magic incantation to collapse them
+			df.columns = df.columns.map('{0[1]}'.format)
+		else :
+			# we rename the column to match what all other multi header reports will have
+			df = df.rename(columns={'Revenue Share' : 'Total'})
 		
 		cols = ['Product (Id#)', 'Net Units Sold', 'Total']
 		df = df.filter(cols)
@@ -28,22 +33,24 @@ class PlatformSteam(Platform):
 		df = df.rename(columns={
 			'Product (Id#)' : 'title',
 			'Net Units Sold' : 'units',
-			'Total' : 'earned',
+			'Total' : 'usd',
 		})
 
 		# the table has a summary row at the end with some missing values, this drops all lines with missing values
 		df = df.dropna()
 
+		df['usd'] = df['usd'].apply(self.strip_dollar_sign)
 		df['title'] = df['title'].apply(self.remove_package_id)
+
+		# tag all rows with this month too
+		df['month'] = month
 		
-		print(df)
+		#print(df)
 
+		#df2 = pd.read_csv(f'data/{self.name}/payments.csv', sep='\t')
+		#print(df2)
 
-		df2 = pd.read_csv(f'data/{self.name}/payments.csv', sep='\t')
-
-		print(df2)
-
-		return
+		return ParseResult.OK, df
 
 		df['units'] = 0
 
@@ -61,6 +68,9 @@ class PlatformSteam(Platform):
 		})
 
 		return ParseResult.OK, df
+
+	def strip_dollar_sign(self, str) -> str :
+		return float(str.replace('$', '').replace(',', ''))
 
 	def remove_package_id(self, str) -> str :
 		return re.sub(r'\(\d+\)', '', str).lower().strip()
