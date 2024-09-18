@@ -36,6 +36,8 @@ class PlatformAppStore(Platform):
 			'Earned' : 'earned',
 			'Proceeds' : 'sek',
 		})
+
+		df_payout['exchange rate'] = df_payout['sek'] / df_payout['earned']
 		
 		print(df_payout)
 		
@@ -50,13 +52,22 @@ class PlatformAppStore(Platform):
 			'com.grapefrukt.games.rymdkapsel1' : 'rymdkapsel',
 			'extended-universe' : 'extended universe bundle',
 		}
-		df_sales = df_sales.replace({'Vendor Identifier': remap})
 
-		df_sales = df_sales.groupby(['Vendor Identifier', 'Customer Currency'])
-		df_sales = df_sales.agg({
-			'Quantity':'sum', 
-			'Partner Share':'sum',
+		df_sales = df_sales.rename(columns={
+			'Vendor Identifier' : 'title',
+			'Customer Currency' : 'currency',
+			'Partner Share' : 'earned',
+			'Quantity' : 'units',
 		})
+
+		df_sales = df_sales.replace({'title': remap})
+
+		df_sales = df_sales.groupby(['title', 'currency'])
+		df_sales = df_sales.agg({
+			'units':'sum', 
+			'earned':'sum',
+		})
+		df_sales.reset_index()
 
 		print(df_sales)
 
