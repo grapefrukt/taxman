@@ -141,6 +141,3 @@ class PlatformAppStore(Platform):
 	# the currency is in parenthesis at the end of the region, this function strips out just the currency abbreviation
 	def region_to_currency(self, str) -> str :
 		return str[-4:-1]
-
-	def format_date(self, str) -> str :
-		return datetime.strptime(str, '%b %d, %Y').strftime('%Y-%m')
