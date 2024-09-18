@@ -3,10 +3,11 @@ from datetime import datetime, timedelta
 from taxmonth import TaxMonth
 
 from platforms.platform import *
+from platforms.appstore import PlatformAppStore
 from platforms.nintendo import PlatformNintendo
 from platforms.playpass import PlatformPlayPass
 from platforms.playstore import PlatformPlayStore
-from platforms.appstore import PlatformAppStore
+from platforms.steam import PlatformSteam
 
 class TaxMan:
 	def __init__(self):
@@ -87,6 +88,7 @@ if __name__ == "__main__":
 		'play-pass' : PlatformPlayPass(),
 		'play-store': PlatformPlayStore(),
 		'appstore'  : PlatformAppStore(),
+		'steam'     : PlatformSteam(),
 	}
 
 	for platform in active_platforms:
@@ -111,6 +113,7 @@ if __name__ == "__main__":
 				case ParseResult.MISSING:
 					print(f'{platform.name} is missing {month}')
 
+	exit()
 	#df = df.groupby(['title', 'month'])
 	#df = df.agg({
 	#	'units':'sum', 

@@ -16,6 +16,10 @@ class Platform(ABC):
 	def name(self) -> str:
 		pass
 
+	@property
+	def data_extension(self) -> str:
+		return '.csv'
+
 	@abstractmethod
 	def download(self, month:TaxMonth) -> ParseResult:
 		pass
@@ -44,4 +48,4 @@ class Platform(ABC):
 
 	def month_to_path(self, month:TaxMonth, index = 0) -> str:
 		if index > 0 : return f'data/{self.name}/{month}-{index}.csv'
-		return f'data/{self.name}/{month}.csv'
+		return f'data/{self.name}/{month}{self.data_extension}'
