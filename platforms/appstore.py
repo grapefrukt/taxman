@@ -87,6 +87,27 @@ class PlatformAppStore(Platform):
 		# use the payout lookup to work out how much each game earned in each currency
 		df_sales['sek'] = df_sales.apply(lambda row: self.exchange_rate(row, df_exchange), axis=1)
 
+		# check if the game has any entries with non-zero sales that still made no money.
+		# this happens if we don't have the exchange rate for that currency for this month.
+		# that can happen if we sold one game in say, MXN, and another game was returned in MXN.
+		# if those two cost the same, we will not be paid in MXN, thus not have an exchange rate
+		# but we still need to work out what that particular sale was worth because it's on two
+		# different games
+
+		for index, row in df_sales.loc[(df_sales['units'] != 0) & (df_sales['sek'] == 0)].iterrows() :
+			df_sum = df_sales.loc[(df_sales['title'] == row['title']) & (df_sales['currency'] != row['currency'])]
+			df_sum = df_sum.groupby('title')
+			df_sum = df_sum.agg({'units':'sum', 'sek':'sum' })
+			row_sum = df_sum.iloc[0]
+			average_price = row_sum['sek'] / row_sum['units']
+
+			print(row)
+			print(f'sold {row_sum['units']} for a total of {row_sum['sek']} sek, average price is {round(average_price, 2)}')
+			row['sek'] = row['units'] * average_price
+			print(row)
+
+			# todo: figure out how to insert this new, corrected row
+
 		# then we collapse all the per-game-per-currency earnings down into just per game
 		df_sales = df_sales.groupby(['title'])
 		df_sales = df_sales.agg({	
@@ -111,6 +132,8 @@ class PlatformAppStore(Platform):
 
 		if not row['currency'] in df_payout.index :
 			print(f"missing exchange data for {row['currency']}, {row['earned']}")
+			return 0
+
 		# because this is an approximate value, we have to round it off here
 		return round(row['earned'] * df_payout.loc[row['currency']]['exchange rate'], 2)
 
