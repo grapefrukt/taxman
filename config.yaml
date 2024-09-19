@@ -1,0 +1,7 @@
+data_path: c:\files\dev\taxman-data
+play-pass:
+  exclude_before: 2020-07
+nintendo:
+  exclude_before: 2019-11
+steam:
+  exclude_before: 2014-01
