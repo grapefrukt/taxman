@@ -25,16 +25,23 @@ class PlatformAppStore(Platform):
 
 	def _parse(self, month):
 		csv_payment = self.preprocess_payment(self.month_to_path(month, 'payment'))
-		
 		io_payment = StringIO(csv_payment)
-		df_exchange = pd.read_csv(io_payment, usecols=['Country or Region (Currency)', 'Earned', 'Proceeds'])
+
+		# because some fields have changed names, we need to read them all
+		df_exchange = pd.read_csv(io_payment)
 		
-		# rename the fields to be shorter
+		# rename the fields to be shorter, here we merge the currency field into one (the one that was renamed in 2019)
 		df_exchange = df_exchange.rename(columns={
 			'Country or Region (Currency)' : 'currency',
+			'Territory (Currency)' : 'currency',
 			'Earned' : 'earned',
 			'Proceeds' : 'sek',
 		})
+
+		# then, to make debugging easier, we drop everything except the columns we care about
+		df_exchange = df_exchange.filter(['currency', 'earned', 'sek'])
+
+		#print(df_exchange)
 
 		# shorten the region/currency field to be just currency
 		df_exchange['currency'] = df_exchange['currency'].apply(self.region_to_currency)
@@ -50,8 +57,6 @@ class PlatformAppStore(Platform):
 		# calculate the exchange rate per currency, this is why we loaded this data in the first place
 		df_exchange['exchange rate'] = df_exchange['sek'] / df_exchange['earned']
 
-		#print(df_exchange)
-		
 		csv_sales = self.preprocess_sales(self.month_to_path(month, 'sales'))
 		io_sales = StringIO(csv_sales)
 		df_sales  = pd.read_csv(io_sales, usecols=['Vendor Identifier', 'Quantity', 'Extended Partner Share', 'Partner Share Currency'], sep='\t')
@@ -154,8 +159,10 @@ class PlatformAppStore(Platform):
 				line_count += 1
 				# skip the first two lines, they're not interesting
 				if line_count < 2 : continue 
+				# some files are inexplicably tab separated, luckily it's easily fixed here
+				line = line.replace('\t', ',')
 				# once we reach an "empty" line, we bail
-				if ',,,,,,,,,,,,' in line : break
+				if ',,,,,,,,,,' in line : break
 				processed += line
 
 		return processed
