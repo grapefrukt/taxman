@@ -58,8 +58,7 @@ class PlatformAppStore(Platform):
         })
 
         # calculate the exchange rate per currency, this is why we loaded this data in the first place
-        df_exchange['exchange rate'] = df_exchange['sek'] / \
-            df_exchange['earned']
+        df_exchange['exchange rate'] = df_exchange['sek'] / df_exchange['earned']
 
         csv_sales = self.preprocess_sales(self.month_to_path(month, 'sales'))
         io_sales = StringIO(csv_sales)
