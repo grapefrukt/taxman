@@ -140,5 +140,13 @@ if __name__ == "__main__":
 		'sek':'sum',
 	})
 
-	print(df)
+	def format_currency(value) :
+		return '{:16,.0f} SEK'.format(value).replace(',', ' ').replace('.', ',')
 
+	def format_units(value):
+		return '{:10,.0f}'.format(value).replace(',', ' ').replace('.', ',')
+
+	df['sek'] = df.apply(lambda row: format_currency(row['sek']), axis=1)
+	df['units'] = df.apply(lambda row: format_units(row['units']), axis=1)
+
+	print(df)
