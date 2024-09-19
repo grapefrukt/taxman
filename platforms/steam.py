@@ -55,23 +55,6 @@ class PlatformSteam(Platform):
 
         return ParseResult.OK, df
 
-        df['units'] = 0
-
-        remap = {
-            'com.grapefrukt.games.bore': 'holedown',
-            'com.grapefrukt.games.rymdkapsel1': 'rymdkapsel',
-        }
-        df = df.replace({'Product Id': remap})
-        df['Start Date'] = df['Start Date'].apply(self.shorten_date)
-
-        df = df.rename(columns={
-            'Start Date': 'month',
-            'Product Id': 'title',
-            'Amount (Merchant Currency)': 'sek',
-        })
-
-        return ParseResult.OK, df
-
     def strip_dollar_sign(self, str) -> str:
         return float(str.replace('$', '').replace(',', ''))
 
