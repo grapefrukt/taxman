@@ -116,7 +116,7 @@ if __name__ == "__main__":
 				case ParseResult.EXCLUDED:
 					print(f'{platform.name} exluded {month}')
 				case ParseResult.MISSING:
-					print(f'{platform.name} is missing {month}')
+					print(f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
 
 	#df = df.groupby(['title', 'month'])
 	#df = df.agg({
@@ -136,7 +136,7 @@ if __name__ == "__main__":
 	df = df.groupby(['platform', 'title'])
 	df = df.agg({
 		'units':'sum', 
-		'usd':'sum',
+		#'usd':'sum',
 		'sek':'sum',
 	})
 
