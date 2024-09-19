@@ -46,6 +46,8 @@ class PlatformSteam(Platform):
         # tag all rows with this month too
         df['month'] = month
 
+        df['sek'] = df['usd'] * 9.0
+
         # print(df)
 
         # df2 = pd.read_csv(f'data/{self.name}/payments.csv', sep='\t')
