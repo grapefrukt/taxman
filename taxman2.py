@@ -70,40 +70,40 @@ class TaxMan:
 
 if __name__ == "__main__":
 	taxman = TaxMan()
-	months, active_platforms = taxman.parse_args()
+	months, selected_platforms = taxman.parse_args()
 
-	print(f"start:     {months[0]}")
-	print(f"end:       {months[-1]}")
-	print(f"count:     {len(months)}")
-	print(f"months:    {', '.join(map(str, months))}")
+	if selected_platforms:
+		print(f"platforms:   {', '.join(selected_platforms)}")
+	else:
+		print(f"platforms:   none")
+
+	print(f"start:       {months[0]}")
+	print(f"end:         {months[-1]}")
+	print(f"month count: {len(months)}")
+	#print(f"months:    {', '.join(map(str, months))}")
 
 	with open('config.yaml', 'r') as file:
 	    config = yaml.safe_load(file)
 
-	print(config['data_path'])
-
-	# Print active_platforms if provided
-	if active_platforms:
-		print(f"active_platforms: {', '.join(active_platforms)}")
-	else:
-		print(f"active_platforms: none")
-
-	platforms = {
-		'nintendo'  : PlatformNintendo(config),
-		'play-pass' : PlatformPlayPass(config),
-		'play-store': PlatformPlayStore(config),
-		'appstore'  : PlatformAppStore(config),
-		'steam'     : PlatformSteam(config),
-	}
-
-	for platform in active_platforms:
-		if platform not in platforms: 
-			raise ValueError(f'Unknown platform: {platform}')
+	platforms = []
+	for platform in selected_platforms :
+		match platform:
+			case 'nintendo'  : 
+				platforms.append(PlatformNintendo(config)),
+			case 'play-pass' : 
+				platforms.append(PlatformPlayPass(config)),
+			case 'play-store': 
+				platforms.append(PlatformPlayStore(config)),
+			case 'appstore'  : 
+				platforms.append(PlatformAppStore(config)),
+			case 'steam'     : 
+				platforms.append(PlatformSteam(config)),
+			case _:
+				raise ValueError(f'Unknown platform: {platform}')	
 
 	df = pd.DataFrame()
 
-	for key, platform in platforms.items():
-		if key not in active_platforms: continue
+	for platform in platforms:
 		for month in months:
 			result = platform.parse(month)
 			match result[0]:
