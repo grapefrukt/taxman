@@ -40,6 +40,10 @@ class Platform(ABC):
     def data_path(self) -> str:
         return f"{self.config['data_path']}/{self.name}"
 
+    @property
+    def title_remap(self) -> str:
+        return self.config['title_remap']
+
     @abstractmethod
     def download(self, month: TaxMonth) -> ParseResult:
         pass

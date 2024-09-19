@@ -17,11 +17,7 @@ class PlatformPlayPass(Platform):
         df = df.filter(cols)
         df['units'] = 0
 
-        remap = {
-            'com.grapefrukt.games.bore': 'holedown',
-            'com.grapefrukt.games.rymdkapsel1': 'rymdkapsel',
-        }
-        df = df.replace({'Product Id': remap})
+        df = df.replace({'Product Id': self.title_remap})
         df['Start Date'] = df['Start Date'].apply(self.shorten_date)
 
         df = df.rename(columns={

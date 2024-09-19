@@ -5,3 +5,11 @@ nintendo:
   exclude_before: 2019-11
 steam:
   exclude_before: 2014-01
+
+title_remap:
+  com.grapefrukt.games.bore: holedown
+  com.grapefrukt.games.rymdkapsel1: rymdkapsel
+  com.grapefrukt.games.twofold: twofold inc.
+  tilebreaker: subpar pool
+  com.grapefrukt.games.rymdkapsel1: rymdkapsel
+  extended-universe: extended universe bundle

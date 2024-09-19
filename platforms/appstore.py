@@ -78,13 +78,7 @@ class PlatformAppStore(Platform):
         })
 
         # remap the game titles
-        df_sales = df_sales.replace({'title': {
-            'com.grapefrukt.games.bore': 'holedown',
-            'com.grapefrukt.games.twofold': 'twofold',
-            'tilebreaker': 'subpar pool',
-            'com.grapefrukt.games.rymdkapsel1': 'rymdkapsel',
-            'extended-universe': 'extended universe bundle',
-        }})
+        df_sales = df_sales.replace({'title': self.title_remap})
 
         # now we summarize the units and earnings per game per currency
         # we have to do it beforehand, because they may be cases where all sales for a currency were returned
