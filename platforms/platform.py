@@ -21,6 +21,9 @@ class Platform(ABC):
 		if self.exclude_before is not None :
 			print(f'{self.name} exludes everything before: {self.exclude_before} (not inclusive)')
 
+	def __str__(self):
+		return self.name
+
 	@property
 	@abstractmethod
 	def name(self) -> str:

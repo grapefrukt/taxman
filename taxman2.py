@@ -14,22 +14,12 @@ from platforms.steam import PlatformSteam
 class TaxMan:
 	def __init__(self):
 		self.parser = argparse.ArgumentParser(description="Gets sales data from start date up to end date for specified platforms")
-		self.add_arguments()
-
-	def add_arguments(self):
-		# Add start date argument
 		self.parser.add_argument('--start', '--from', help='Start date in YYYY-MM format (optional)')
-		
-		# Add optional end date argument
 		self.parser.add_argument('--end', '--to', help='End date in YYYY-MM format (optional)')
-		
-		# Add optional months argument
 		self.parser.add_argument('--months', '--count', type=int, help='Number of months (optional)')
-
-		# Add platforms argument (multiple strings can be provided)
 		self.parser.add_argument('--platforms', '--platform', nargs='+', help='List of platforms (optional)')
 
-	def parse_args(self):
+	def intialize(self):
 		args = self.parser.parse_args()
 
 		# Parse and validate the start date
@@ -63,43 +53,37 @@ class TaxMan:
 		if not start.equals(end) and not end.is_after(start) :
 			raise ValueError("End date must be later than start date.")
 
+		with open('config.yaml', 'r') as file:
+			config = yaml.safe_load(file)		
+
 		# Get the platforms (optional)
-		platforms = args.platforms if args.platforms else []
+		platforms = []
+		for platform in args.platforms :
+			match platform:
+				case 'nintendo'  : 
+					platforms.append(PlatformNintendo(config)),
+				case 'play-pass' : 
+					platforms.append(PlatformPlayPass(config)),
+				case 'play-store': 
+					platforms.append(PlatformPlayStore(config)),
+				case 'appstore'  : 
+					platforms.append(PlatformAppStore(config)),
+				case 'steam'     : 
+					platforms.append(PlatformSteam(config)),
+				case _:
+					raise ValueError(f'Unknown platform: {platform}')	
 
 		return TaxMonth.make_range(start, end), platforms
 
 if __name__ == "__main__":
 	taxman = TaxMan()
-	months, selected_platforms = taxman.parse_args()
+	months, platforms = taxman.intialize()
 
-	if selected_platforms:
-		print(f"platforms:   {', '.join(selected_platforms)}")
-	else:
-		print(f"platforms:   none")
-
+	print(f"platforms:   {', '.join(map(str, platforms))}")
 	print(f"start:       {months[0]}")
 	print(f"end:         {months[-1]}")
 	print(f"month count: {len(months)}")
 	#print(f"months:    {', '.join(map(str, months))}")
-
-	with open('config.yaml', 'r') as file:
-	    config = yaml.safe_load(file)
-
-	platforms = []
-	for platform in selected_platforms :
-		match platform:
-			case 'nintendo'  : 
-				platforms.append(PlatformNintendo(config)),
-			case 'play-pass' : 
-				platforms.append(PlatformPlayPass(config)),
-			case 'play-store': 
-				platforms.append(PlatformPlayStore(config)),
-			case 'appstore'  : 
-				platforms.append(PlatformAppStore(config)),
-			case 'steam'     : 
-				platforms.append(PlatformSteam(config)),
-			case _:
-				raise ValueError(f'Unknown platform: {platform}')	
 
 	df = pd.DataFrame()
 
