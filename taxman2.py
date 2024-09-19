@@ -114,7 +114,7 @@ if __name__ == "__main__":
 					# then concat it to our big data table
 					df = pd.concat([df, result[1]])
 				case ParseResult.EXCLUDED:
-					print(f'{platform.name} exluded {month}')
+					print(f'{platform.name} excluded {month}')
 				case ParseResult.MISSING:
 					print(f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
 
