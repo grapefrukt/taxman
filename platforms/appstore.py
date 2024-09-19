@@ -27,30 +27,30 @@ class PlatformAppStore(Platform):
 		csv_payout = self.preprocess_payout(self.month_to_path(month, 0))
 		
 		io_payout = StringIO(csv_payout)
-		df_payout = pd.read_csv(io_payout, usecols=['Country or Region (Currency)', 'Earned', 'Proceeds'])
+		df_exchange = pd.read_csv(io_payout, usecols=['Country or Region (Currency)', 'Earned', 'Proceeds'])
 		
 		# rename the fields to be shorter
-		df_payout = df_payout.rename(columns={
+		df_exchange = df_exchange.rename(columns={
 			'Country or Region (Currency)' : 'currency',
 			'Earned' : 'earned',
 			'Proceeds' : 'sek',
 		})
 
 		# shorten the region/currency field to be just currency
-		df_payout['currency'] = df_payout['currency'].apply(self.region_to_currency)
+		df_exchange['currency'] = df_exchange['currency'].apply(self.region_to_currency)
 
 		# some currencies (usd) appear multiple times, idk if they use a slightly different exchange rate
 		# or if it's rounding, for our purposes, we can sum these and use them as one and the same
-		df_payout = df_payout.groupby('currency')
-		df_payout = df_payout.agg({
+		df_exchange = df_exchange.groupby('currency')
+		df_exchange = df_exchange.agg({
 			'earned':'sum', 
 			'sek':'sum',
 		})
 
 		# calculate the exchange rate per currency, this is why we loaded this data in the first place
-		df_payout['exchange rate'] = df_payout['sek'] / df_payout['earned']
+		df_exchange['exchange rate'] = df_exchange['sek'] / df_exchange['earned']
 
-		#print(df_payout)
+		#print(df_exchange)
 		
 		csv_sales = self.preprocess_sales(self.month_to_path(month, 1))
 		io_sales = StringIO(csv_sales)
@@ -85,7 +85,7 @@ class PlatformAppStore(Platform):
 		df_sales.reset_index(inplace=True)
 
 		# use the payout lookup to work out how much each game earned in each currency
-		df_sales['sek'] = df_sales.apply(lambda row: self.exchange_rate(row, df_payout), axis=1)
+		df_sales['sek'] = df_sales.apply(lambda row: self.exchange_rate(row, df_exchange), axis=1)
 
 		# then we collapse all the per-game-per-currency earnings down into just per game
 		df_sales = df_sales.groupby(['title'])
