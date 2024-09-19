@@ -14,17 +14,15 @@ class PlatformPlayStore(Platform):
     def _parse(self, month):
         df = pd.read_csv(self.month_to_path(month))
 
+        # these are the columns we'll need, ignore everything else
+        cols = ['Description', 'Transaction Date', 'Product Title', 'Amount (Merchant Currency)']
+
         # for some reason, the report is sometimes split into multiple files, check if any are present and concat them
         index = 1
         while (self.check_month_present(month, index)):
             print(f'multi file for {month} at {index}')
-            df = pd.concat([df, pd.read_csv(self.month_to_path(month, index))])
+            df = pd.concat([df, pd.read_csv(self.month_to_path(month, index), usecols=cols)])
             index += 1
-
-        # get rid of all the columns we don't need
-        # todo: update to use usecols instead
-        cols = ['Description', 'Transaction Date', 'Product Title', 'Amount (Merchant Currency)']
-        df = df.filter(cols)
 
         # the description column contains a unique id per transaction,
         # we group by that to get a sum for each transaction
