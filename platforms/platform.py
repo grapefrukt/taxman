@@ -13,6 +13,13 @@ class ParseResult(Enum):
 class Platform(ABC):
 	def __init__(self, config):
 		self.config = config
+		try:
+			self.exclude_before = TaxMonth.from_string(self.config[self.name]['exclude_before'])
+		except KeyError:
+			self.exclude_before = None
+		
+		if self.exclude_before is not None :
+			print(f'{self.name} exludes everything before: {self.exclude_before} (not inclusive)')
 
 	@property
 	@abstractmethod
@@ -32,10 +39,10 @@ class Platform(ABC):
 		pass
 
 	def parse(self, month:TaxMonth) -> (ParseResult, pd.DataFrame):
-		if not self.check_month_present(month) : 
-			return ParseResult.MISSING, None
 		if self.check_month_excluded(month) : 
 			return ParseResult.EXCLUDED, None
+		if not self.check_month_present(month) : 
+			return ParseResult.MISSING, None
 		return self._parse(month)
 
 	@abstractmethod
@@ -46,13 +53,24 @@ class Platform(ABC):
 	# if index is 0 we check the first file and so on
 	# for most platforms except appstore, we need one or sometimes more files
 	# for appstore we always need two
-	def check_month_present(self, month:TaxMonth, index = -1) -> bool:
+	def check_month_present(self, month:TaxMonth, index = None) -> bool:
 		return os.path.isfile(self.month_to_path(month, index))
 
-	def check_month_excluded(self, month:TaxMonth, index = 0) -> bool:
+	def check_month_excluded(self, month:TaxMonth, index = None) -> bool:
+		# the platform may be configured to exclude everything before some month
+		if self.exclude_before is not None :
+			if month.is_before(self.exclude_before) : return True
+
+		# otherwise, the specific file may be flagged to exclude, if so, we
+		# have to make sure there is a file in the first place, if there is no file
+		# we return that the file is not excluded
+		if not self.check_month_present(month, index) : return False
+
+		# otherwise we read the first line, if that line has EXCLUDED in it, 
+		# we return that it is indeed excluded
 		with open(self.month_to_path(month), 'r', encoding='utf8') as file:
 			return 'EXCLUDED' in file.readline().rstrip().lstrip()
 
-	def month_to_path(self, month:TaxMonth, index = 0) -> str:
-		if index > 0 : return f"{self.data_path}/{month}-{index}.csv"
+	def month_to_path(self, month:TaxMonth, index = None) -> str:
+		if index is not None : return f"{self.data_path}/{month}-{index}.csv"
 		return f"{self.data_path}/{month}{self.data_extension}"

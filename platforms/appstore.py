@@ -12,8 +12,8 @@ class PlatformAppStore(Platform):
 	# app store always needs two files to get the numbers we need
 	def check_month_present(self, month:TaxMonth, index = -1) -> bool:
 		if index == -1 :
-			one = self.check_month_present(month, 0)
-			two = self.check_month_present(month, 1)
+			one = self.check_month_present(month, 'payment')
+			two = self.check_month_present(month, 'sales')
 			if one is not ParseResult.OK : return one
 			if two is not ParseResult.OK : return two
 			return ParseResult.OK
@@ -24,10 +24,10 @@ class PlatformAppStore(Platform):
 		pass
 
 	def _parse(self, month):
-		csv_payout = self.preprocess_payout(self.month_to_path(month, 0))
+		csv_payment = self.preprocess_payment(self.month_to_path(month, 'payment'))
 		
-		io_payout = StringIO(csv_payout)
-		df_exchange = pd.read_csv(io_payout, usecols=['Country or Region (Currency)', 'Earned', 'Proceeds'])
+		io_payment = StringIO(csv_payment)
+		df_exchange = pd.read_csv(io_payment, usecols=['Country or Region (Currency)', 'Earned', 'Proceeds'])
 		
 		# rename the fields to be shorter
 		df_exchange = df_exchange.rename(columns={
@@ -52,7 +52,7 @@ class PlatformAppStore(Platform):
 
 		#print(df_exchange)
 		
-		csv_sales = self.preprocess_sales(self.month_to_path(month, 1))
+		csv_sales = self.preprocess_sales(self.month_to_path(month, 'sales'))
 		io_sales = StringIO(csv_sales)
 		df_sales  = pd.read_csv(io_sales, usecols=['Vendor Identifier', 'Quantity', 'Extended Partner Share', 'Partner Share Currency'], sep='\t')
 
@@ -146,7 +146,7 @@ class PlatformAppStore(Platform):
 		# we can then use that to do an educated guess as to what this was worth
 		return row['units'] * average_price
 
-	def preprocess_payout(self, path) -> str :
+	def preprocess_payment(self, path) -> str :
 		processed = ''
 		line_count = -1
 		with open(path, 'r', encoding='utf8') as file:
