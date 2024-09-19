@@ -2,76 +2,77 @@ import pandas as pd
 from platforms.platform import *
 import re
 
+
 class PlatformSteam(Platform):
-	@property
-	def name(self) -> str:
-		return 'steam'
+    @property
+    def name(self) -> str:
+        return 'steam'
 
-	@property
-	def data_extension(self) -> str:
-		return '.htm'
+    @property
+    def data_extension(self) -> str:
+        return '.htm'
 
-	def download(self, month):
-		pass
+    def download(self, month):
+        pass
 
-	def _parse(self, month):
-		df = pd.read_html(self.month_to_path(month))
-		df = df[0]
+    def _parse(self, month):
+        df = pd.read_html(self.month_to_path(month))
+        df = df[0]
 
-		# early 2014 steam did not have the multi index tables, so this special case is needed
-		if isinstance(df.columns, pd.MultiIndex) :
-			# the table has multiple headers, this is annoying so we use this magic incantation to collapse them
-			df.columns = df.columns.map('{0[1]}'.format)
-		else :
-			# we rename the column to match what all other multi header reports will have
-			df = df.rename(columns={'Revenue Share' : 'Total'})
-		
-		cols = ['Product (Id#)', 'Net Units Sold', 'Total']
-		df = df.filter(cols)
+        # early 2014 steam did not have the multi index tables, so this special case is needed
+        if isinstance(df.columns, pd.MultiIndex):
+            # the table has multiple headers, this is annoying so we use this magic incantation to collapse them
+            df.columns = df.columns.map('{0[1]}'.format)
+        else:
+            # we rename the column to match what all other multi header reports will have
+            df = df.rename(columns={'Revenue Share': 'Total'})
 
-		# rename some columns to better names
-		df = df.rename(columns={
-			'Product (Id#)' : 'title',
-			'Net Units Sold' : 'units',
-			'Total' : 'usd',
-		})
+        cols = ['Product (Id#)', 'Net Units Sold', 'Total']
+        df = df.filter(cols)
 
-		# the table has a summary row at the end with some missing values, this drops all lines with missing values
-		df = df.dropna()
+        # rename some columns to better names
+        df = df.rename(columns={
+            'Product (Id#)': 'title',
+            'Net Units Sold': 'units',
+            'Total': 'usd',
+        })
 
-		df['usd'] = df['usd'].apply(self.strip_dollar_sign)
-		df['title'] = df['title'].apply(self.remove_package_id)
+        # the table has a summary row at the end with some missing values, this drops all lines with missing values
+        df = df.dropna()
 
-		# tag all rows with this month too
-		df['month'] = month
-		
-		#print(df)
+        df['usd'] = df['usd'].apply(self.strip_dollar_sign)
+        df['title'] = df['title'].apply(self.remove_package_id)
 
-		#df2 = pd.read_csv(f'data/{self.name}/payments.csv', sep='\t')
-		#print(df2)
+        # tag all rows with this month too
+        df['month'] = month
 
-		return ParseResult.OK, df
+        # print(df)
 
-		df['units'] = 0
+        # df2 = pd.read_csv(f'data/{self.name}/payments.csv', sep='\t')
+        # print(df2)
 
-		remap = {
-			'com.grapefrukt.games.bore' : 'holedown',
-			'com.grapefrukt.games.rymdkapsel1' : 'rymdkapsel',
-		}
-		df = df.replace({'Product Id': remap})
-		df['Start Date'] = df['Start Date'].apply(self.shorten_date)
+        return ParseResult.OK, df
 
-		df = df.rename(columns={
-			'Start Date' : 'month',
-			'Product Id' : 'title',
-			'Amount (Merchant Currency)' : 'sek',
-		})
+        df['units'] = 0
 
-		return ParseResult.OK, df
+        remap = {
+            'com.grapefrukt.games.bore': 'holedown',
+            'com.grapefrukt.games.rymdkapsel1': 'rymdkapsel',
+        }
+        df = df.replace({'Product Id': remap})
+        df['Start Date'] = df['Start Date'].apply(self.shorten_date)
 
-	def strip_dollar_sign(self, str) -> str :
-		return float(str.replace('$', '').replace(',', ''))
+        df = df.rename(columns={
+            'Start Date': 'month',
+            'Product Id': 'title',
+            'Amount (Merchant Currency)': 'sek',
+        })
 
-	def remove_package_id(self, str) -> str :
-		return re.sub(r'\(\d+\)', '', str).lower().strip()
-		#return re.sub(r' \(\d+\)', '', str)
+        return ParseResult.OK, df
+
+    def strip_dollar_sign(self, str) -> str:
+        return float(str.replace('$', '').replace(',', ''))
+
+    def remove_package_id(self, str) -> str:
+        return re.sub(r'\(\d+\)', '', str).lower().strip()
+        # return re.sub(r' \(\d+\)', '', str)
