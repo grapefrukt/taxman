@@ -84,6 +84,8 @@ class PlatformAppStore(Platform):
 		})
 		df_sales.reset_index(inplace=True)
 
+		#print(df_sales)
+
 		# use the payout lookup to work out how much each game earned in each currency
 		df_sales['sek'] = df_sales.apply(lambda row: self.exchange_rate(row, df_exchange), axis=1)
 
@@ -93,21 +95,8 @@ class PlatformAppStore(Platform):
 		# if those two cost the same, we will not be paid in MXN, thus not have an exchange rate
 		# but we still need to work out what that particular sale was worth because it's on two
 		# different games
-
-		for index, row in df_sales.loc[(df_sales['units'] != 0) & (df_sales['sek'] == 0)].iterrows() :
-			df_sum = df_sales.loc[(df_sales['title'] == row['title']) & (df_sales['currency'] != row['currency'])]
-			df_sum = df_sum.groupby('title')
-			df_sum = df_sum.agg({'units':'sum', 'sek':'sum' })
-			row_sum = df_sum.iloc[0]
-			average_price = row_sum['sek'] / row_sum['units']
-
-			print(row)
-			print(f'sold {row_sum['units']} for a total of {row_sum['sek']} sek, average price is {round(average_price, 2)}')
-			row['sek'] = row['units'] * average_price
-			print(row)
-
-			# todo: figure out how to insert this new, corrected row
-
+		df_sales['sek'] = df_sales.apply(lambda row: self.fix_missing_exchange_rate(row, df_sales), axis=1)
+	
 		# then we collapse all the per-game-per-currency earnings down into just per game
 		df_sales = df_sales.groupby(['title'])
 		df_sales = df_sales.agg({	
@@ -136,6 +125,26 @@ class PlatformAppStore(Platform):
 
 		# because this is an approximate value, we have to round it off here
 		return round(row['earned'] * df_payout.loc[row['currency']]['exchange rate'], 2)
+
+	def fix_missing_exchange_rate(self, row, df_sales) :
+		# if the game has not sold any units in this currency, we're good
+		# if it already has a sek value, we're also good
+		if row['units'] == 0 or row['sek'] != 0 :
+			return row['sek']
+
+		# if we're not good, we summarize all the sales for this game for this month, number and revenue (in sek)
+		df_sum = df_sales.loc[(df_sales['title'] == row['title']) & (df_sales['currency'] != row['currency'])]
+		df_sum = df_sum.groupby('title')
+		df_sum = df_sum.agg({'units':'sum', 'sek':'sum' })
+		# then we get the first (and only row)
+		row_sum = df_sum.iloc[0]
+		# and calculate the average price of this game this month
+		average_price = row_sum['sek'] / row_sum['units']
+
+		#print(f'sold {row_sum['units']} for a total of {row_sum['sek']} sek, average price is {round(average_price, 2)}')
+
+		# we can then use that to do an educated guess as to what this was worth
+		return row['units'] * average_price
 
 	def preprocess_payout(self, path) -> str :
 		processed = ''
