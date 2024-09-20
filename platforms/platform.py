@@ -6,11 +6,14 @@ from taxmonth import TaxMonth
 
 
 class ParseResult(Enum):
+    # should not happen
     UNKNOWN = 1
-    OK = 2  # file was parsed successfully
+    # file was parsed successfully
+    OK = 2
     # file was not present, but wasn't supposed to be (sometimes happens when there are no sales for a month)
     EXCLUDED = 3
-    MISSING = 4  # file was not present, in a bad way
+    # file was not present, in a bad way
+    MISSING = 4
 
 
 class Platform(ABC):

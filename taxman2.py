@@ -14,7 +14,9 @@ class TaxMan:
 
     def __init__(self):
         self.parser = argparse.ArgumentParser(
+            prog='taxman',
             description="Gets sales data from start date up to end date for specified platforms")
+        self.parser.add_argument('action', help="Which action to perform")
         self.parser.add_argument(
             '--start', '--from', help='Start date in YYYY-MM format (optional)')
         self.parser.add_argument(
@@ -22,24 +24,29 @@ class TaxMan:
         self.parser.add_argument(
             '--months', '--count', type=int, help='Number of months (optional)')
         self.parser.add_argument(
-            '--platforms', '--platform', nargs='+', help='List of platforms (optional)')
+            '--platforms', '--platform', nargs='+', help='List of platforms')
 
     def intialize(self):
         args = self.parser.parse_args()
+
+        available_actions = ['download', 'parse']
+        action = args.action
+        if (action not in available_actions):
+            raise ValueError(f"Invalid action. Available actions are: {', '.join(available_actions)}")
 
         # Parse and validate the start date
         start = None
         if args.start:
             start = TaxMonth.from_string(args.start)
             if not start:
-                raise ValueError("Invalid start date format. Use YYYY-MM.")
+                raise ValueError('Invalid start date format. Use YYYY-MM.')
 
         # Parse and validate the end date (optional)
         end = None
         if args.end:
             end = TaxMonth.from_string(args.end)
             if not end:
-                raise ValueError("Invalid end date format. Use YYYY-MM.")
+                raise ValueError('Invalid end date format. Use YYYY-MM.')
 
         # Parse months
         has_months = args.months
@@ -48,21 +55,24 @@ class TaxMan:
             months = 1
 
         if not start and not end:
-            raise ValueError("You must supply either a start or end date.")
+            raise ValueError('You must supply a date (YYYY-MM) in either --start or --end (or both)')
         elif start and end and has_months:
             raise ValueError(
-                "Months makes no sense when start and end date was supplied.")
+                '--months makes no sense when start and end date was supplied.')
         elif start and not end:
             end = start.add_months(months - 1)
         elif end and not start:
             start = end.add_months(-months + 1)
 
         if not start.equals(end) and not end.is_after(start):
-            raise ValueError("End date must be later than start date.")
+            raise ValueError('End date must be later than start date.')
 
         # read the config file
         with open('config.yaml', 'r') as file:
             config = yaml.safe_load(file)
+
+        if not args.platforms:
+            raise ValueError('You must supply at least one --platform')
 
         # Get the platforms and create the corresponding classes
         platforms = []
@@ -86,7 +96,12 @@ class TaxMan:
 
 if __name__ == "__main__":
     taxman = TaxMan()
-    months, platforms = taxman.intialize()
+    months, platforms = ([], [])
+    try:
+        months, platforms = taxman.intialize()
+    except Exception as e:
+        print(e)
+        exit()
 
     print(f"platforms:   {', '.join(map(str, platforms))}")
     print(f"start:       {months[0]}")
