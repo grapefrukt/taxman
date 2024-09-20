@@ -131,8 +131,7 @@ class PlatformAppStore(Platform):
             return 0
 
         if not row['currency'] in df_payout.index:
-            print(
-                f"missing exchange data for {row['currency']}, {row['earned']}")
+            print(f"missing exchange data for {row['currency']}, {row['earned']}")
             return 0
 
         # because this is an approximate value, we have to round it off here
