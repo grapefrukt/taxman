@@ -88,5 +88,8 @@ class Platform(ABC):
 
     def month_to_path(self, month: TaxMonth, index=None) -> str:
         if index is not None:
-            return f"{self.data_path}/{month}-{index}.csv"
-        return f"{self.data_path}/{month}{self.data_extension}"
+            return self.file_to_path(f"{month}-{index}{self.data_extension}")
+        return self.file_to_path(f"{month}{self.data_extension}")
+
+    def file_to_path(self, file:str) -> str:
+        return f"{self.data_path}/{file}"
