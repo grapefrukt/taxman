@@ -5,6 +5,10 @@ import re
 
 
 class PlatformSteam(Platform):
+    def __init__(self, config):
+        super().__init__(config)
+        self.df_payments = None
+
     @property
     def name(self) -> str:
         return 'steam'
@@ -47,30 +51,41 @@ class PlatformSteam(Platform):
         # tag all rows with this month too
         df['month'] = month
 
-        df['sek'] = df['usd'] * 9.0
+        if self.df_payments is None :
+            self.df_payments = pd.read_csv(self.file_to_path('payments.tsv'), sep='\t', usecols=['Reporting Period', 'Payment Date', 'Net Payment'])
+            self.df_payments = self.df_payments.rename(columns={
+                'Reporting Period': 'month',
+                'Payment Date': 'send date',
+                'Net Payment': 'usd',
+            })
 
-        df_payments = pd.read_csv(self.file_to_path('payments.tsv'), sep='\t', usecols=['Reporting Period', 'Payment Date', 'Net Payment'])
-        df_payments = df_payments.rename(columns={
-            'Reporting Period': 'month',
-            'Payment Date': 'send_date',
-            'Net Payment': 'usd',
-        })
+            self.df_payments['send date'] = pd.to_datetime(self.df_payments['send date'])
+            self.df_payments['month'] = self.df_payments['month'].apply(self.format_date)
+            self.df_payments['usd'] = self.df_payments['usd'].apply(self.strip_dollar_sign)
 
-        df_payments['send_date'] = pd.to_datetime(df_payments['send_date'])
-        df_payments['month'] = df_payments['month'].apply(self.format_date)
-        df_payments['usd'] = df_payments['usd'].apply(self.strip_dollar_sign)
-        df_payments.set_index('month', inplace=True)
-        print(df_payments)
+            #self.df_payments.groupby('send date')
+            #self.df_payments = self.df_payments.agg({
+            #    'month': 'first',
+            #    'usd': 'sum',
+            #})
 
-        df_bank = pd.read_csv(self.file_to_path('bank_statement.tsv'), sep='\t')
-        df_bank = df_bank.rename(columns={'date': 'receive_date'})
-        df_bank['receive_date'] = pd.to_datetime(df_bank['receive_date'])
-        df_bank.set_index('receive_date', inplace=True)
-        print(df_bank)
+            self.df_payments.set_index('month', inplace=True)
 
-        df_payments['sek'] = df_payments.apply(lambda row: self.find_in_bank_statement(row, df_bank), axis=1)
+            df_bank = pd.read_csv(self.file_to_path('bank_statement.tsv'), sep='\t')
+            df_bank = df_bank.rename(columns={'date': 'receive date'})
+            df_bank['receive date'] = pd.to_datetime(df_bank['receive date'])
+            df_bank.set_index('receive date', inplace=True)
 
-        print(df_payments)
+            self.df_payments['sek'] = self.df_payments.apply(lambda row: self.find_in_bank_statement(row, df_bank), axis=1)
+            self.df_payments['exchange rate'] = self.df_payments['sek'] / self.df_payments['usd']
+
+        #print(df)
+        #print(self.df_payments)
+
+        exchange_rate = self.df_payments.loc[str(month)]['exchange rate']
+        #print(exchange_rate)
+
+        df['sek'] = df['usd'] * exchange_rate
 
         return ParseResult.OK, df
 
@@ -84,8 +99,8 @@ class PlatformSteam(Platform):
         return datetime.strptime(str, '%B %Y').strftime('%Y-%m')
 
     def find_in_bank_statement(self, row, df_bank) :
-        send_date = row['send_date'].to_pydatetime()
-        iloc_idx = df_bank.index.get_indexer([row['send_date']], method='nearest')
+        send_date = row['send date'].to_pydatetime()
+        iloc_idx = df_bank.index.get_indexer([row['send date']], method='nearest')
         #print(f"index: {iloc_idx}")
         #print(f"result: {df_bank.index[iloc_idx]}")
         receive_date = df_bank.index[iloc_idx][0].to_pydatetime()
@@ -99,4 +114,4 @@ class PlatformSteam(Platform):
 
         print(f"looking for {send_date:%Y-%m-%d}, found {receive_date:%Y-%m-%d}, delta: {delta}")
 
-        return sek
+        return float(sek)
