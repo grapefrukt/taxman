@@ -46,8 +46,7 @@ class PlatformAppStore(Platform):
         # print(df_exchange)
 
         # shorten the region/currency field to be just currency
-        df_exchange['currency'] = df_exchange['currency'].apply(
-            self.region_to_currency)
+        df_exchange['currency'] = df_exchange['currency'].apply(self.region_to_currency)
 
         # some currencies (usd) appear multiple times, idk if they use a slightly different exchange rate
         # or if it's rounding, for our purposes, we can sum these and use them as one and the same
