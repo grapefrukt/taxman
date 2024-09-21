@@ -16,7 +16,7 @@ class TaxMan:
         self.parser = argparse.ArgumentParser(
             prog='taxman',
             description="Gets sales data from start date up to end date for specified platforms")
-        self.parser.add_argument('action', help="Which action to perform")
+        self.parser.add_argument('actions', nargs='+', help="Which actions to perform")
         self.parser.add_argument(
             '--start', '--from', help='Start date in YYYY-MM format (optional)')
         self.parser.add_argument(
@@ -30,9 +30,10 @@ class TaxMan:
         args = self.parser.parse_args()
 
         available_actions = ['download', 'parse']
-        action = args.action
-        if (action not in available_actions):
-            raise ValueError(f"Invalid action. Available actions are: {', '.join(available_actions)}")
+        actions = args.actions
+        for action in actions:
+            if action not in available_actions:
+                raise ValueError(f"Invalid action: {action}. Available actions are: {', '.join(available_actions)}")
 
         # Parse and validate the start date
         start = None
@@ -91,19 +92,20 @@ class TaxMan:
                 case _:
                     raise ValueError(f'Unknown platform: {platform}')
 
-        return TaxMonth.make_range(start, end), platforms
+        return actions, TaxMonth.make_range(start, end), platforms
 
 
 if __name__ == "__main__":
     taxman = TaxMan()
-    months, platforms = ([], [])
+    actions = months, platforms = ([], [])
     try:
-        months, platforms = taxman.intialize()
+        actions, months, platforms = taxman.intialize()
     except Exception as e:
         print(e)
         exit()
 
     print(f"platforms:   {', '.join(map(str, platforms))}")
+    print(f"actions:     {', '.join(map(str, actions))}")
     print(f"start:       {months[0]}")
     print(f"end:         {months[-1]}")
     print(f"month count: {len(months)}")
@@ -112,19 +114,23 @@ if __name__ == "__main__":
 
     for platform in platforms:
         for month in months:
-            result = platform.parse(month)
-            match result[0]:
-                case ParseResult.OK:
-                    print(f'{platform.name} parsed {month} ok')
-                    # tag this data with the platform it came from
-                    result[1]['platform'] = platform.name
-                    # then concat it to our big data table
-                    df = pd.concat([df, result[1]])
-                case ParseResult.EXCLUDED:
-                    print(f'{platform.name} excluded {month}')
-                case ParseResult.MISSING:
-                    print(
-                        f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
+            if 'download' in actions:
+                result = platform.download(month)
+
+            if 'parse' in actions:
+                result, month_df = platform.parse(month)
+                match result:
+                    case ParseResult.OK:
+                        print(f'{platform.name} parsed {month} ok')
+                        # tag this data with the platform it came from
+                        month_df['platform'] = platform.name
+                        # then concat it to our big data table
+                        df = pd.concat([df, month_df])
+                    case ParseResult.EXCLUDED:
+                        print(f'{platform.name} excluded {month}')
+                    case ParseResult.MISSING:
+                        print(
+                            f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
 
     # df = df.groupby(['title', 'month'])
     # df = df.agg({
@@ -141,10 +147,12 @@ if __name__ == "__main__":
     #   'sek':'sum',
     # })
 
+    if len(df.index) == 0:
+        exit('no rows in dataframe')
+
     df = df.groupby(['platform', 'title'])
     df = df.agg({
         'units': 'sum',
-        # 'usd':'sum',
         'sek': 'sum',
     })
 
