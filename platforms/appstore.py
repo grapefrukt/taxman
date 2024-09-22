@@ -142,6 +142,7 @@ class PlatformAppStore(Platform):
         # rename the fields to be shorter, here we merge the currency field into one (the one that was renamed in 2019)
         df_exchange = df_exchange.rename(columns={
             'Country or Region (Currency)': 'currency',
+            'Region (Currency)': 'currency',
             'Territory (Currency)': 'currency',
             'Earned': 'earned',
             'Proceeds': 'sek',
@@ -286,7 +287,8 @@ class PlatformAppStore(Platform):
                 # some files are inexplicably tab separated, luckily it's easily fixed here
                 line = line.replace('\t', ',')
                 # once we reach an "empty" line, we bail
-                if ',,,,,,,,,,' in line:
+                # empty line is all commas and possibly some whitespace (always a newline)
+                if line.replace(',', '').rstrip() == '':
                     break
                 processed += line
 
