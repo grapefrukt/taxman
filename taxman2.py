@@ -150,11 +150,13 @@ if __name__ == "__main__":
     if len(df.index) == 0:
         exit('no rows in dataframe')
 
-    df = df.groupby(['platform', 'title'])
+    df = df.groupby([ 'title'])
     df = df.agg({
         'units': 'sum',
         'sek': 'sum',
     })
+
+    df = df.sort_values('sek', ascending=False)
 
     def format_currency(value):
         return '{:16,.0f} SEK'.format(value).replace(',', ' ').replace('.', ',')
