@@ -83,7 +83,7 @@ class Platform(ABC):
 
         # otherwise we read the first line, if that line has EXCLUDED in it,
         # we return that it is indeed excluded
-        with open(self.month_to_path(month), 'r', encoding='utf8') as file:
+        with open(self.month_to_path(month, index), 'r', encoding='utf8') as file:
             return 'EXCLUDED' in file.readline().rstrip().lstrip()
 
     def month_to_path(self, month: TaxMonth, index=None) -> str:

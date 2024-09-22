@@ -42,12 +42,18 @@ class PlatformAppStore(Platform):
     def check_month_present(self, month: TaxMonth, index=None) -> bool:
         if index is None:
             if not self.check_month_present(month, 'payment'):
-                return False
+                print("missing payment file")
             if not self.check_month_present(month, 'sales'):
-                return False
+                print("missing sales file")
+                if not os.path.isdir(self.month_to_path(month, 'sales').replace(self.data_extension, '')):
+                    print("missing sales directory")
+                    return False
             return True
         else:
             return super().check_month_present(month, index)
+
+    def check_month_excluded(self, month: TaxMonth, index=None) -> bool:
+        return super().check_month_excluded(month, 'payment')
 
     def download(self, month):
         print(f'downloading for {month}')
@@ -128,8 +134,7 @@ class PlatformAppStore(Platform):
         os.rename(f'tmp/{uuid}.zip', f'tmp/{month}-sales.zip')
 
     def _parse(self, month):
-        csv_payment = self.preprocess_payment(
-            self.month_to_path(month, 'payment'))
+        csv_payment = self.preprocess_payment(self.month_to_path(month, 'payment'))
         io_payment = StringIO(csv_payment)
 
         # because some fields have changed names, we need to read them all
