@@ -44,9 +44,8 @@ class PlatformAppStore(Platform):
             if not self.check_month_present(month, 'payment'):
                 print("missing payment file")
             if not self.check_month_present(month, 'sales'):
-                print("missing sales file")
-                if not os.path.isdir(self.month_to_path(month, 'sales').replace(self.data_extension, '')):
-                    print("missing sales directory")
+                if not self.has_sales_directory(month):
+                    print("missing both sales file and directory")
                     return False
             return True
         else:
@@ -167,7 +166,19 @@ class PlatformAppStore(Platform):
         # calculate the exchange rate per currency, this is why we loaded this data in the first place
         df_exchange['exchange rate'] = df_exchange['sek'] / df_exchange['earned']
 
-        csv_sales = self.preprocess_sales(self.month_to_path(month, 'sales'))
+        # some older data only comes in multi file format
+        # luckily it's the same data just spread across separate files, so we can read them all in and 
+        # just skip the headers of the later ones and it'll parse just the same
+        if self.has_sales_directory(month):
+            csv_sales = ""
+            drop_header = False
+            for file in os.listdir(self.sales_directory(month)):
+                csv_sales = csv_sales + self.preprocess_sales(f'{self.sales_directory(month)}/{file}', drop_header=drop_header)
+                drop_header = True
+
+        else:
+            csv_sales = self.preprocess_sales(self.month_to_path(month, 'sales'))
+
         io_sales = StringIO(csv_sales)
         columns = [
             'Vendor Identifier',
@@ -281,16 +292,25 @@ class PlatformAppStore(Platform):
 
         return processed
 
-    def preprocess_sales(self, path) -> str:
+    def preprocess_sales(self, path, drop_header = False) -> str:
         processed = ''
         with open(path, 'r', encoding='utf8') as file:
             for line in file:
+                if drop_header :
+                    drop_header = False
+                    continue
                 # once we reach the line that starts with 'Total_Rows' we bail
                 if 'Total_Rows' in line:
                     break
                 processed += line
 
         return processed
+
+    def sales_directory(self, month) -> str:
+        return self.month_to_path(month, 'sales').replace(self.data_extension, '')
+
+    def has_sales_directory(self, month) -> bool:
+        return os.path.isdir(self.sales_directory(month))
 
     # the currency is in parenthesis at the end of the region, this function strips out just the currency abbreviation
     def region_to_currency(self, str) -> str:
