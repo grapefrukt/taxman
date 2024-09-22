@@ -39,15 +39,13 @@ class PlatformAppStore(Platform):
         return 'appstore'
 
     # app store always needs two files to get the numbers we need
-    def check_month_present(self, month: TaxMonth, index=-1) -> bool:
-        if index == -1:
-            one = self.check_month_present(month, 'payment')
-            two = self.check_month_present(month, 'sales')
-            if one is not ParseResult.OK:
-                return one
-            if two is not ParseResult.OK:
-                return two
-            return ParseResult.OK
+    def check_month_present(self, month: TaxMonth, index=None) -> bool:
+        if index is None:
+            if not self.check_month_present(month, 'payment'):
+                return False
+            if not self.check_month_present(month, 'sales'):
+                return False
+            return True
         else:
             return super().check_month_present(month, index)
 
