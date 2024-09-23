@@ -21,7 +21,7 @@ class PlatformPlayStore(Platform):
         # for some reason, the report is sometimes split into multiple files, check if any are present and concat them
         index = None
         while (self.check_month_present(month, index)):
-            if index is not None: print(f'multi file for {month} at {index}')
+            # if index is not None: print(f'multi file for {month} at {index}')
             df = pd.concat([df, pd.read_csv(self.month_to_path(month, index), usecols=cols, dtype=dtype)])
             if index is None: index = 0
             index += 1
