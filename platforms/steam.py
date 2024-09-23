@@ -86,8 +86,15 @@ class PlatformSteam(Platform):
         # the table has a summary row at the end with some missing values, this drops all lines with missing values
         df = df.dropna()
 
+
         df['usd'] = df['usd'].apply(self.strip_dollar_sign)
         df['title'] = df['title'].apply(self.remove_package_id)
+
+        if self.config[self.name]['exclude_steam_direct_fee']:
+            df = df[~df.title.str.contains('recouped steam direct fee')]
+
+        if self.config[self.name]['exclude_soundtrack']:
+            df = df[~df.title.str.contains('soundtrack')]
 
         exchange_rate = float(self.df_payments[self.df_payments['month'].str.contains(str(month))]['exchange rate'].iloc[0])
         df['sek'] = df['usd'] * exchange_rate
