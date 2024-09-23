@@ -12,16 +12,18 @@ class PlatformPlayStore(Platform):
         pass
 
     def _parse(self, month):
-        df = pd.read_csv(self.month_to_path(month))
+        df = pd.DataFrame()
 
         # these are the columns we'll need, ignore everything else
-        cols = ['Description', 'Transaction Date', 'Product Title', 'Amount (Merchant Currency)']
+        cols = ['Description', 'Product Title', 'Amount (Merchant Currency)']
+        dtype = {'Description':str, 'Product Title':str, 'Amount (Merchant Currency)':float}
 
         # for some reason, the report is sometimes split into multiple files, check if any are present and concat them
-        index = 1
+        index = None
         while (self.check_month_present(month, index)):
-            print(f'multi file for {month} at {index}')
-            df = pd.concat([df, pd.read_csv(self.month_to_path(month, index), usecols=cols)])
+            if index is not None: print(f'multi file for {month} at {index}')
+            df = pd.concat([df, pd.read_csv(self.month_to_path(month, index), usecols=cols, dtype=dtype)])
+            if index is None: index = 0
             index += 1
 
         # the description column contains a unique id per transaction,
@@ -30,7 +32,6 @@ class PlatformPlayStore(Platform):
         df = df.agg({
             'Amount (Merchant Currency)': 'sum',
             'Product Title': 'first',
-            'Transaction Date': 'first'
         })
 
         # after the groupby and agg we turn this back into a normal dataframe
