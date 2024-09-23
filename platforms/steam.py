@@ -89,9 +89,6 @@ class PlatformSteam(Platform):
         df['usd'] = df['usd'].apply(self.strip_dollar_sign)
         df['title'] = df['title'].apply(self.remove_package_id)
 
-        # tag all rows with this month too
-        df['month'] = month
-
         exchange_rate = float(self.df_payments[self.df_payments['month'].str.contains(str(month))]['exchange rate'].iloc[0])
         df['sek'] = df['usd'] * exchange_rate
 

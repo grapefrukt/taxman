@@ -232,9 +232,6 @@ class PlatformAppStore(Platform):
             'sek': 'sum',
         })
 
-        # tag all rows with this month too
-        df_sales['month'] = month
-
         # reset the index so we can merge with everything else later
         df_sales.reset_index(inplace=True)
 

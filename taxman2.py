@@ -124,6 +124,8 @@ if __name__ == "__main__":
                         print(f'{platform.name} parsed {month} ok')
                         # tag this data with the platform it came from
                         month_df['platform'] = platform.name
+                        month_df['month'] = month.month
+                        month_df['year'] = month.year
                         # then concat it to our big data table
                         df = pd.concat([df, month_df])
                     case ParseResult.EXCLUDED:
@@ -150,13 +152,13 @@ if __name__ == "__main__":
     if len(df.index) == 0:
         exit('no rows in dataframe')
 
-    df = df.groupby([ 'title'])
+    df = df.groupby(['year'])
     df = df.agg({
         'units': 'sum',
         'sek': 'sum',
     })
 
-    df = df.sort_values('sek', ascending=False)
+    df = df.sort_values('year', ascending=False)
 
     def format_currency(value):
         return '{:16,.0f} SEK'.format(value).replace(',', ' ').replace('.', ',')

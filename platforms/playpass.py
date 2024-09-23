@@ -16,10 +16,7 @@ class PlatformPlayPass(Platform):
         df['units'] = 0
 
         df = df.replace({'Product Id': self.title_remap})
-        df['Start Date'] = df['Start Date'].apply(self.shorten_date)
-
         df = df.rename(columns={
-            'Start Date': 'month',
             'Product Id': 'title',
             'Amount (Merchant Currency)': 'sek',
         })
