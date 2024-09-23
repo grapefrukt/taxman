@@ -8,6 +8,7 @@ from platforms.nintendo import PlatformNintendo
 from platforms.playpass import PlatformPlayPass
 from platforms.playstore import PlatformPlayStore
 from platforms.steam import PlatformSteam
+import multiprocessing as mp
 
 
 class TaxMan:
@@ -94,6 +95,21 @@ class TaxMan:
 
         return actions, TaxMonth.make_range(start, end), platforms
 
+def parse(arg):
+    platform, month = arg
+    result, month_df = platform.parse(month)
+    match result:
+        case ParseResult.OK:
+            #print(f'{platform.name} parsed {month} ok')
+            month_df['platform'] = platform.name
+            month_df['month'] = month.month
+            month_df['year'] = month.year
+            return month_df
+        case ParseResult.EXCLUDED:
+            print(f'{platform.name} excluded {month}')
+        case ParseResult.MISSING:
+            print(
+                f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
 
 if __name__ == "__main__":
     taxman = TaxMan()
@@ -109,30 +125,28 @@ if __name__ == "__main__":
     print(f"start:       {months[0]}")
     print(f"end:         {months[-1]}")
     print(f"month count: {len(months)}")
+    
+    if 'download' in actions:
+        jobs_download = []
+        for platform in platforms:
+            for month in months:
+                result = jobs_download.append((platform, month))
+        pool = mp.Pool(processes=(mp.cpu_count() - 1))
+        results = pool.map(parse, jobs_download)
+        pool.close()
+        pool.join()
+    
+    if 'parse' in actions:
+        jobs_parse = []
+        for platform in platforms:
+            for month in months:
+                jobs_parse.append((platform, month))
 
-    df = pd.DataFrame()
-
-    for platform in platforms:
-        for month in months:
-            if 'download' in actions:
-                result = platform.download(month)
-
-            if 'parse' in actions:
-                result, month_df = platform.parse(month)
-                match result:
-                    case ParseResult.OK:
-                        print(f'{platform.name} parsed {month} ok')
-                        # tag this data with the platform it came from
-                        month_df['platform'] = platform.name
-                        month_df['month'] = month.month
-                        month_df['year'] = month.year
-                        # then concat it to our big data table
-                        df = pd.concat([df, month_df])
-                    case ParseResult.EXCLUDED:
-                        print(f'{platform.name} excluded {month}')
-                    case ParseResult.MISSING:
-                        print(
-                            f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
+        pool = mp.Pool(processes=(mp.cpu_count() - 1))
+        results = pool.map(parse, jobs_parse)
+        pool.close()
+        pool.join()
+        df = pd.concat(results)
 
     # df = df.groupby(['title', 'month'])
     # df = df.agg({
@@ -152,13 +166,13 @@ if __name__ == "__main__":
     if len(df.index) == 0:
         exit('no rows in dataframe')
 
-    df = df.groupby(['year'])
+    df = df.groupby(['year', 'title'])
     df = df.agg({
         'units': 'sum',
         'sek': 'sum',
     })
 
-    df = df.sort_values('year', ascending=False)
+    df = df.sort_values(['year', 'title'], ascending=True)
 
     def format_currency(value):
         return '{:16,.0f} SEK'.format(value).replace(',', ' ').replace('.', ',')
