@@ -49,6 +49,3 @@ class PlatformPlayStore(Platform):
         })
 
         return ParseResult.OK, df
-
-    def format_date(self, str) -> str:
-        return datetime.strptime(str, '%b %d, %Y').strftime('%Y-%m')
