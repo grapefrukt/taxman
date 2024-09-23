@@ -1,4 +1,5 @@
 import argparse
+import multiprocessing as mp
 import yaml
 
 from taxmonth import TaxMonth
@@ -8,7 +9,6 @@ from platforms.nintendo import PlatformNintendo
 from platforms.playpass import PlatformPlayPass
 from platforms.playstore import PlatformPlayStore
 from platforms.steam import PlatformSteam
-import multiprocessing as mp
 
 
 class TaxMan:
@@ -105,11 +105,10 @@ def parse(arg):
             month_df['month'] = month.month
             month_df['year'] = month.year
             return month_df
-        case ParseResult.EXCLUDED:
-            print(f'{platform.name} excluded {month}')
-        case ParseResult.MISSING:
-            print(
-                f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
+        #case ParseResult.EXCLUDED:
+            #print(f'{platform.name} excluded {month}')
+        #case ParseResult.MISSING:
+            #print(f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
 
 if __name__ == "__main__":
     taxman = TaxMan()
@@ -125,27 +124,22 @@ if __name__ == "__main__":
     print(f"start:       {months[0]}")
     print(f"end:         {months[-1]}")
     print(f"month count: {len(months)}")
-    
+
     if 'download' in actions:
         jobs_download = []
         for platform in platforms:
             for month in months:
                 result = jobs_download.append((platform, month))
-        pool = mp.Pool(processes=(mp.cpu_count() - 1))
-        results = pool.map(parse, jobs_download)
-        pool.close()
-        pool.join()
+        with mp.Pool(processes=(mp.cpu_count() - 1)) as pool:
+            results = pool.map(parse, jobs_download)
     
     if 'parse' in actions:
         jobs_parse = []
         for platform in platforms:
             for month in months:
                 jobs_parse.append((platform, month))
-
-        pool = mp.Pool(processes=(mp.cpu_count() - 1))
-        results = pool.map(parse, jobs_parse)
-        pool.close()
-        pool.join()
+        with mp.Pool(processes=4) as pool:
+            results = pool.map(parse, jobs_parse)
         df = pd.concat(results)
 
     # df = df.groupby(['title', 'month'])
