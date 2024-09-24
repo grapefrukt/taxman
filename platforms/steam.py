@@ -23,9 +23,10 @@ class PlatformSteam(Platform):
     def _parse(self, month):
 
         # if it's not set up, we read in the payments table and bank statements table now, this will happen once per run
-        if self.df_payments is None :
+        if self.df_payments is None:
             # read the tsv and rename some columns
-            self.df_payments = pd.read_csv(self.file_to_path('payments.tsv'), sep='\t', usecols=['Reporting Period', 'Payment Date', 'Net Payment'])
+            usecols = ['Reporting Period', 'Payment Date', 'Net Payment']
+            self.df_payments = pd.read_csv(self.file_to_path('payments.tsv'), sep='\t', usecols=usecols)
             self.df_payments = self.df_payments.rename(columns={
                 'Reporting Period': 'month',
                 'Payment Date': 'send date',
@@ -38,11 +39,12 @@ class PlatformSteam(Platform):
             self.df_payments['usd'] = self.df_payments['usd'].apply(self.strip_dollar_sign)
 
             # because months and payments do not match 1 to 1, we need to group by the send date
-            # that will give us a sum that matches up with the bank statement entry, this is because 
+            # that will give us a sum that matches up with the bank statement entry, this is because
             # some months will not reach the payment threshold and will not pay out until next month
             self.df_payments = self.df_payments.groupby(['send date'])
-            # we summarize the usd column, the month column will be merged (with spaces) to contain all months it had payments for
-            self.df_payments = self.df_payments.agg({'usd': 'sum', 'month' : ' '.join})
+            # we summarize the usd column, the month column will be merged (with spaces)
+            # to contain all months it had payments for
+            self.df_payments = self.df_payments.agg({'usd': 'sum', 'month': ' '.join})
             # then we need to reset the index to turn this back into a regular dataframe
             self.df_payments = self.df_payments.reset_index()
 
@@ -55,13 +57,14 @@ class PlatformSteam(Platform):
             # and set the index because of reasons?
             df_bank.set_index('receive date', inplace=True)
 
-            # this line searches the bank statement for the nearest payout (within limits) and returns the corresponding value in sek
-            self.df_payments['sek'] = self.df_payments.apply(lambda row: self.find_in_bank_statement(row, df_bank), axis=1)
+            # this line searches the bank statement for the nearest payout (within limits)
+            # and returns the corresponding value in sek
+            self.df_payments['sek'] = self.df_payments.apply(
+                lambda row: self.find_in_bank_statement(row, df_bank), axis=1)
 
             # then, it's a simple matter of dividing the sek value with the usd value to get an exchange rate
             # this will be read later when converting that months payout to sek
             self.df_payments['exchange rate'] = self.df_payments['sek'] / self.df_payments['usd']
-
 
         df = pd.read_html(self.month_to_path(month))[0]
 
@@ -86,7 +89,6 @@ class PlatformSteam(Platform):
         # the table has a summary row at the end with some missing values, this drops all lines with missing values
         df = df.dropna()
 
-
         df['usd'] = df['usd'].apply(self.strip_dollar_sign)
         df['title'] = df['title'].apply(self.remove_package_id)
 
@@ -110,7 +112,7 @@ class PlatformSteam(Platform):
     def format_date(self, str) -> datetime:
         return datetime.strptime(str, '%B %Y').strftime('%Y-%m')
 
-    def find_in_bank_statement(self, row, df_bank) :
+    def find_in_bank_statement(self, row, df_bank):
         # convert the send date to be a datetime
         send_date = row['send date'].to_pydatetime()
         # find the index to the row in the bank statement data frame that is nearest our send date
@@ -125,11 +127,13 @@ class PlatformSteam(Platform):
         delta = (receive_date - send_date).days
 
         #  do some sanity checks on this delta
-        if abs(delta) > 10 :
-            raise Exception(f"No received payment found for {send_date:%Y-%m-%d}, best candidate was {receive_date:%Y-%m-%d} and that's {delta} days away")
-        if delta < 0 :
-            raise Exception(f'Payment received before it was sent! sent on: {send_date:%Y-%m-%d}, received on: {receive_date:%Y-%m-%d}')
+        if abs(delta) > 10:
+            raise Exception(f"No received payment found for {send_date:%Y-%m-%d}, \
+                best candidate was {receive_date:%Y-%m-%d} and that's {delta} days away")
+        if delta < 0:
+            raise Exception(f'Payment received before it was sent! sent on: {send_date:%Y-%m-%d}, \
+                received on: {receive_date:%Y-%m-%d}')
 
-        #print(f"looking for {send_date:%Y-%m-%d}, found {receive_date:%Y-%m-%d}, delta: {delta}")
+        # print(f"looking for {send_date:%Y-%m-%d}, found {receive_date:%Y-%m-%d}, delta: {delta}")
 
         return float(sek)

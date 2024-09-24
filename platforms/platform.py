@@ -91,5 +91,5 @@ class Platform(ABC):
             return self.file_to_path(f"{month}-{index}{self.data_extension}")
         return self.file_to_path(f"{month}{self.data_extension}")
 
-    def file_to_path(self, file:str) -> str:
+    def file_to_path(self, file: str) -> str:
         return f"{self.data_path}/{file}"

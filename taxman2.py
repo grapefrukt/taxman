@@ -95,20 +95,22 @@ class TaxMan:
 
         return actions, TaxMonth.make_range(start, end), platforms
 
+
 def parse(arg):
     platform, month = arg
     result, month_df = platform.parse(month)
     match result:
         case ParseResult.OK:
-            #print(f'{platform.name} parsed {month} ok')
+            # print(f'{platform.name} parsed {month} ok')
             month_df['platform'] = platform.name
             month_df['month'] = month.month
             month_df['year'] = month.year
             return month_df
-        #case ParseResult.EXCLUDED:
-            #print(f'{platform.name} excluded {month}')
-        #case ParseResult.MISSING:
-            #print(f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
+        # case ParseResult.EXCLUDED:
+            # print(f'{platform.name} excluded {month}')
+        # case ParseResult.MISSING:
+            # print(f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
+
 
 if __name__ == "__main__":
     taxman = TaxMan()
@@ -132,7 +134,7 @@ if __name__ == "__main__":
                 result = jobs_download.append((platform, month))
         with mp.Pool(processes=(mp.cpu_count() - 1)) as pool:
             results = pool.map(parse, jobs_download)
-    
+
     if 'parse' in actions:
         jobs_parse = []
         for platform in platforms:

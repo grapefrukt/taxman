@@ -168,7 +168,7 @@ class PlatformAppStore(Platform):
         df_exchange['exchange rate'] = df_exchange['sek'] / df_exchange['earned']
 
         # some older data only comes in multi file format
-        # luckily it's the same data just spread across separate files, so we can read them all in and 
+        # luckily it's the same data just spread across separate files, so we can read them all in and
         # just skip the headers of the later ones and it'll parse just the same
         if self.has_sales_directory(month):
             csv_sales = ""
@@ -291,11 +291,11 @@ class PlatformAppStore(Platform):
 
         return processed
 
-    def preprocess_sales(self, path, drop_header = False) -> str:
+    def preprocess_sales(self, path, drop_header=False) -> str:
         processed = ''
         with open(path, 'r', encoding='utf8') as file:
             for line in file:
-                if drop_header :
+                if drop_header:
                     drop_header = False
                     continue
                 # once we reach the line that starts with 'Total_Rows' we bail

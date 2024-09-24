@@ -11,7 +11,7 @@ class PlatformNintendo(Platform):
         pass
 
     def _parse(self, month):
-        cols = ['Title', 'Sales Units', 'Final Payable Amount',]
+        cols = ['Title', 'Sales Units', 'Final Payable Amount']
         df = pd.read_csv(self.month_to_path(month), usecols=cols)
 
         df = df.rename(columns={

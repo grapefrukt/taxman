@@ -1,4 +1,3 @@
-from datetime import datetime
 import pandas as pd
 from platforms.platform import *
 
@@ -16,14 +15,15 @@ class PlatformPlayStore(Platform):
 
         # these are the columns we'll need, ignore everything else
         cols = ['Description', 'Product Title', 'Amount (Merchant Currency)']
-        dtype = {'Description':str, 'Product Title':str, 'Amount (Merchant Currency)':float}
+        dtype = {'Description': str, 'Product Title': str, 'Amount (Merchant Currency)': float}
 
         # for some reason, the report is sometimes split into multiple files, check if any are present and concat them
         index = None
         while (self.check_month_present(month, index)):
             # if index is not None: print(f'multi file for {month} at {index}')
             df = pd.concat([df, pd.read_csv(self.month_to_path(month, index), usecols=cols, dtype=dtype)])
-            if index is None: index = 0
+            if index is None:
+                index = 0
             index += 1
 
         # the description column contains a unique id per transaction,
