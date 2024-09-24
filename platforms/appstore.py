@@ -1,39 +1,9 @@
 from io import StringIO
 import pandas as pd
-from dateutil.relativedelta import relativedelta
 from platforms.platform import *
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import ElementClickInterceptedException
-from time import sleep
-import pickle
-import re
+
 
 class PlatformAppStore(Platform):
-    def __init__(self, config):
-        super().__init__(config)
-        
-        #profile = webdriver.FirefoxProfile()
-        #profile.set_preference("browser.download.folderList", 2)
-        #profile.set_preference("browser.download.manager.showWhenStarting", False)
-        #profile.set_preference("browser.download.dir", os.path.abspath('tmp'))
-        #profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")
-        #options = Options()
-        #options.profile = profile
-        #
-        #self.driver = webdriver.Firefox(options=options)
-        #self.driver.get(f'https://appstoreconnect.apple.com/itc/payments_and_financial_reports')
-
-        #cookie_export = {}
-        #with open('tmp/appstore.tmp', 'rb') as f:
-        #    cookie_export = pickle.load(f)
-        #for cookie in cookie_export : 
-        #    self.driver.add_cookie(cookie)
-
     @property
     def name(self) -> str:
         return 'appstore'
@@ -55,82 +25,7 @@ class PlatformAppStore(Platform):
         return super().check_month_excluded(month, 'payment')
 
     def download(self, month):
-        print(f'downloading for {month}')
-        self.driver.get(f'https://appstoreconnect.apple.com/itc/payments_and_financial_reports#/?date={str(month).replace('-', '')}')
-        sleep(2)
-        print("waiting for calendar to be clickable")
-        WebDriverWait(self.driver, 300).until(EC.element_to_be_clickable((By.CSS_SELECTOR,".cal")))
-        print("page seems to have loaded")
-        print("storing cookies so we don't have to login again")
-        with open('tmp/appstore.tmp', 'wb') as output:
-            pickle.dump(self.driver.get_cookies(), output, pickle.HIGHEST_PROTOCOL)
-
-        #print("clicking download button")
-#
-        #while True:
-        #    try:
-        #        download_button = WebDriverWait(self.driver, 300).until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".cicon-download")))
-        #        download_button.click()
-        #        break
-        #    except ElementClickInterceptedException:
-        #        print('button not ready, trying again')
-        #        sleep(1)
-        #    pass
-#
-        #while True :
-        #    print("waiting for payment report to download..")
-        #    if os.path.isfile('tmp/financial_report.csv') :
-        #        break
-        #    sleep(5)
-#
-        #print("payment report downloaded successfully")
-#
-        #try:
-        #    os.remove(f'tmp/{month}-payment.csv')
-        #except OSError:
-        #    pass
-        #os.rename('tmp/financial_report.csv', f'tmp/{month}-payment.csv')
-            
-        print("opening report dialog")
-        while True:
-            try:
-                create_reports_button = WebDriverWait(self.driver, 300).until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".reportgenbtn")))
-                create_reports_button.click()
-                break
-            except ElementClickInterceptedException:
-                print('button not ready, trying again')
-                sleep(1)
-            pass
-
-        print("requested generation of reports")
-        create_reports_button = WebDriverWait(self.driver, 300).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "div[ng-click=\"generate()\"]")))
-        create_reports_button.click()
-
-        print("dowloading reports")
-        create_reports_button = WebDriverWait(self.driver, 300).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[download=\"download.zip\"]")))
-        
-        link_target = create_reports_button.get_attribute('href')
-        print(f'link is: {link_target}')
-        
-        result = re.search(r'uuid=(.*)', link_target)
-        uuid = result.group(1) if result else ""
-        print(f'uuid is: {uuid}')
-
-        create_reports_button.click()
-
-        while True :
-            print(f"waiting for download sales report to download")
-            if os.path.isfile(f'tmp/{uuid}.zip') :
-                break
-            sleep(2)
-
-        print("sales report downloaded successfully")
-
-        try:
-            os.remove(f'tmp/{month}-sales.zip')
-        except OSError:
-            pass
-        os.rename(f'tmp/{uuid}.zip', f'tmp/{month}-sales.zip')
+        pass
 
     def _parse(self, month):
         csv_payment = self.preprocess_payment(self.month_to_path(month, 'payment'))
