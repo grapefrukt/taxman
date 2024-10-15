@@ -15,8 +15,7 @@ class ReportForTaxes(Report):
         df = df.reset_index()
 
         # figure out if this report has both google play pass and play store
-        has_google = 'play-pass' in platforms and 'play-store' in platforms
-        if has_google:
+        if self.has_double_google(platforms):
             platforms.remove('play-pass')
             platforms.remove('play-store')
             platforms.append('google')
@@ -29,6 +28,11 @@ class ReportForTaxes(Report):
                 else:
                     print(self.default(platform, month, df))
 
+    def modify_months(self, months, platforms):
+        if self.has_double_google(platforms):
+            print("report has both play pass and play store, prepending extra month!\n")
+            months.insert(0, months[0].add_months(-1))
+        return months
 
     def default(self, platform, month, df: pd.DataFrame, header:bool=True) -> str:
         out = ''
@@ -72,7 +76,18 @@ class ReportForTaxes(Report):
         return out
 
     def google(self, month, df: pd.DataFrame) -> str:
-        ps = self.default('play-store', month, df, header=False)
-        pp = self.default('play-pass', month.add_months(-1), df, header=False)
+        offset_month = month.add_months(-1)
 
-        return f'{ps}\n\n{pp}'
+        out = ""
+        out += f'sales report for play pass {offset_month} and play store {month}\n\n'
+        out += 'PER TITLE (including charges, fees, taxes, and refunds):\n\n'
+
+        out += 'play store\n'
+        out += self.default('play-store', month, df, header=False)
+        out += 'play pass\n'
+        out += self.default('play-pass', offset_month, df, header=False)
+
+        return out
+
+    def has_double_google(self, platforms):
+        return 'play-pass' in platforms and 'play-store' in platforms

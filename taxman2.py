@@ -28,9 +28,9 @@ class TaxMan:
         self.parser.add_argument(
             '--platforms', '--platform', nargs='+', help='List of platforms')
         self.parser.add_argument(
-            '--reports', '--report', nargs='+', help='List of reports')
+            '--report', nargs='?', help='Report type to generate', default="taxes")
         self.parser.add_argument(
-            '--download', help='List of reports', default=False)
+            '--download', help='Download sales data if missing', default=False)
 
     def intialize(self):
         args = self.parser.parse_args()
@@ -92,15 +92,14 @@ class TaxMan:
                 case _:
                     raise ValueError(f'Unknown platform: {platform}')
 
-        reports = []
-        for report in args.reports:
-            match report:
-                case 'taxes':
-                    reports.append(ReportForTaxes(config)),
-                case _:
-                    raise ValueError(f'Unknown report: {report}')
+        report = None
+        match args.report:
+            case 'taxes':
+                report = ReportForTaxes(config)
+            case _:
+                raise ValueError(f'Unknown report: {report}')
 
-        return download, TaxMonth.make_range(start, end), platforms, reports
+        return download, TaxMonth.make_range(start, end), platforms, report
 
 
 def parse(arg):
@@ -108,7 +107,7 @@ def parse(arg):
     result, month_df = platform.parse(month)
     match result:
         case ParseResult.OK:
-            #print(f'{platform.name} parsed {month} ok')
+            print(f'{platform.name} parsed {month} ok')
             month_df['platform'] = platform.name
             month_df['month'] = month.month
             month_df['year'] = month.year
@@ -121,12 +120,12 @@ def parse(arg):
 
 if __name__ == "__main__":
     taxman = TaxMan()
-    download, months, platforms, reports = (False, [], [], [])
-    #try:
-    download, months, platforms, reports = taxman.intialize()
-    #except Exception as e:
-    #    print(e)
-    #    exit()
+    download, months, platforms, report = (False, [], [], None)
+    try:
+        download, months, platforms, report = taxman.intialize()
+    except Exception as e:
+        print(e)
+        exit()
 
     print(f"platforms:   {', '.join(map(str, platforms))}")
     print(f"download:    {str(download).lower()}")
@@ -134,9 +133,11 @@ if __name__ == "__main__":
     print(f"end:         {months[-1]}")
     print(f"month count: {len(months)}")
 
-    # add a bit here where the reports are allowed to modify the specified months
-    # i need this so i can offset the play-pass payments by a month without having 
-    # to add an extra padding month before each time
+    # make a list of the platforms as plain strings
+    platforms_str = [str(p) for p in platforms]
+
+    requested_months = months
+    months = report.modify_months(months, platforms_str)
 
     if download:
         jobs_download = []
@@ -145,8 +146,6 @@ if __name__ == "__main__":
                 result = jobs_download.append((platform, month))
         with mp.Pool(processes=4) as pool:
             results = pool.map(parse, jobs_download)
-
-        exit()
 
     jobs_parse = []
     for platform in platforms:
@@ -159,8 +158,6 @@ if __name__ == "__main__":
     if len(df.index) == 0:
         exit('no rows in dataframe')
 
-    # make a list of the platforms as plain strings
-    platforms_str = [str(p) for p in platforms]
 
-    for report in reports:
-        report.generate(months, platforms_str, df)
+
+    report.generate(requested_months, platforms_str, df)

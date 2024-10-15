@@ -7,6 +7,10 @@ class Report(ABC):
         self.config = config
 
     @abstractmethod
+    def modify_months(self, months, platforms):
+        pass
+
+    @abstractmethod
     def generate(self, months, platforms, df: pd.DataFrame) -> str:
         pass
 
