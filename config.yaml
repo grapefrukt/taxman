@@ -5,8 +5,8 @@ nintendo:
   exclude_before: 2019-11
 steam:
   exclude_before: 2014-01
-  exclude_steam_direct_fee: True
-  exclude_soundtrack: True
+  exclude_steam_direct_fee: False
+  exclude_soundtrack: False
 
 title_remap:
   com.grapefrukt.games.bore: holedown
