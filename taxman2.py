@@ -10,6 +10,8 @@ from platforms.playpass import PlatformPlayPass
 from platforms.playstore import PlatformPlayStore
 from platforms.steam import PlatformSteam
 
+from reports.report import *
+from reports.taxes import ReportForTaxes 
 
 class TaxMan:
 
@@ -17,7 +19,6 @@ class TaxMan:
         self.parser = argparse.ArgumentParser(
             prog='taxman',
             description="Gets sales data from start date up to end date for specified platforms")
-        self.parser.add_argument('actions', nargs='+', help="Which actions to perform")
         self.parser.add_argument(
             '--start', '--from', help='Start date in YYYY-MM format (optional)')
         self.parser.add_argument(
@@ -26,15 +27,13 @@ class TaxMan:
             '--months', '--count', type=int, help='Number of months (optional)')
         self.parser.add_argument(
             '--platforms', '--platform', nargs='+', help='List of platforms')
+        self.parser.add_argument(
+            '--reports', '--report', nargs='+', help='List of reports')
+        self.parser.add_argument(
+            '--download', help='List of reports', default=False)
 
     def intialize(self):
         args = self.parser.parse_args()
-
-        available_actions = ['download', 'parse']
-        actions = args.actions
-        for action in actions:
-            if action not in available_actions:
-                raise ValueError(f"Invalid action: {action}. Available actions are: {', '.join(available_actions)}")
 
         # Parse and validate the start date
         start = None
@@ -93,7 +92,15 @@ class TaxMan:
                 case _:
                     raise ValueError(f'Unknown platform: {platform}')
 
-        return actions, TaxMonth.make_range(start, end), platforms
+        reports = []
+        for report in args.reports:
+            match report:
+                case 'taxes':
+                    reports.append(ReportForTaxes(config)),
+                case _:
+                    raise ValueError(f'Unknown report: {report}')
+
+        return download, TaxMonth.make_range(start, end), platforms, reports
 
 
 def parse(arg):
@@ -101,48 +108,49 @@ def parse(arg):
     result, month_df = platform.parse(month)
     match result:
         case ParseResult.OK:
-            # print(f'{platform.name} parsed {month} ok')
+            print(f'{platform.name} parsed {month} ok')
             month_df['platform'] = platform.name
             month_df['month'] = month.month
             month_df['year'] = month.year
             return month_df
-        # case ParseResult.EXCLUDED:
-            # print(f'{platform.name} excluded {month}')
-        # case ParseResult.MISSING:
-            # print(f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
+        case ParseResult.EXCLUDED:
+            print(f'{platform.name} excluded {month}')
+        case ParseResult.MISSING:
+            print(f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
 
 
 if __name__ == "__main__":
     taxman = TaxMan()
-    actions = months, platforms = ([], [])
-    try:
-        actions, months, platforms = taxman.intialize()
-    except Exception as e:
-        print(e)
-        exit()
+    download, months, platforms, reports = (False, [], [], [])
+    #try:
+    download, months, platforms, reports = taxman.intialize()
+    #except Exception as e:
+    #    print(e)
+    #    exit()
 
     print(f"platforms:   {', '.join(map(str, platforms))}")
-    print(f"actions:     {', '.join(map(str, actions))}")
+    print(f"download:    {str(download).lower()}")
     print(f"start:       {months[0]}")
     print(f"end:         {months[-1]}")
     print(f"month count: {len(months)}")
 
-    if 'download' in actions:
+    if download:
         jobs_download = []
         for platform in platforms:
             for month in months:
                 result = jobs_download.append((platform, month))
-        with mp.Pool(processes=(mp.cpu_count() - 1)) as pool:
+        with mp.Pool(processes=4) as pool:
             results = pool.map(parse, jobs_download)
 
-    if 'parse' in actions:
-        jobs_parse = []
-        for platform in platforms:
-            for month in months:
-                jobs_parse.append((platform, month))
-        with mp.Pool(processes=4) as pool:
-            results = pool.map(parse, jobs_parse)
-        df = pd.concat(results)
+        exit()
+
+    jobs_parse = []
+    for platform in platforms:
+        for month in months:
+            jobs_parse.append((platform, month))
+    with mp.Pool(processes=4) as pool:
+        results = pool.map(parse, jobs_parse)
+    df = pd.concat(results)
 
     # df = df.groupby(['title', 'month'])
     # df = df.agg({
@@ -162,21 +170,6 @@ if __name__ == "__main__":
     if len(df.index) == 0:
         exit('no rows in dataframe')
 
-    df = df.groupby(['year', 'title'])
-    df = df.agg({
-        'units': 'sum',
-        'sek': 'sum',
-    })
-
-    df = df.sort_values(['year', 'title'], ascending=True)
-
-    def format_currency(value):
-        return '{:16,.0f} SEK'.format(value).replace(',', ' ').replace('.', ',')
-
-    def format_units(value):
-        return '{:10,.0f}'.format(value).replace(',', ' ').replace('.', ',')
-
-    df['sek'] = df.apply(lambda row: format_currency(row['sek']), axis=1)
-    df['units'] = df.apply(lambda row: format_units(row['units']), axis=1)
-
-    print(df)
+    for report in reports:
+        result = report.generate(df)
+        print(result)
