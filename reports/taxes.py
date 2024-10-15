@@ -3,6 +3,10 @@ from reports.report import *
 
 
 class ReportForTaxes(Report):
+
+    @property
+    def name(self) -> str:
+        return 'taxes'
     
     def generate(self, months, platforms, df: pd.DataFrame) -> str:
         df = df.groupby(['platform', 'year', 'month', 'title'])
@@ -23,7 +27,7 @@ class ReportForTaxes(Report):
         for platform in platforms:
             for month in months:
                 report, units, sek = self.report(platform, month, df)
-                print(report)
+                self.write(month, platform, report)
 
     def modify_months(self, months, platforms):
         if self.has_double_google(platforms):
