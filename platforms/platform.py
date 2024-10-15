@@ -51,6 +51,10 @@ class Platform(ABC):
     def download(self, month: TaxMonth) -> ParseResult:
         pass
 
+    @abstractmethod
+    def prepare(self, months):
+        pass
+
     def parse(self, month: TaxMonth) -> (ParseResult, pd.DataFrame):
         if self.check_month_excluded(month):
             return ParseResult.EXCLUDED, None

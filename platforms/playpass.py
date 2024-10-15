@@ -10,6 +10,9 @@ class PlatformPlayPass(Platform):
     def download(self, month):
         pass
 
+    def prepare(self, month):
+        pass
+
     def _parse(self, month):
         cols = ['Product Id', 'Amount (Merchant Currency)']
         df = pd.read_csv(self.month_to_path(month), usecols=cols)

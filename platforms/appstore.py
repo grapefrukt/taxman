@@ -27,6 +27,9 @@ class PlatformAppStore(Platform):
     def download(self, month):
         pass
 
+    def prepare(self, month):
+        pass
+
     def _parse(self, month):
         csv_payment = self.preprocess_payment(self.month_to_path(month, 'payment'))
         io_payment = StringIO(csv_payment)

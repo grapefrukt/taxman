@@ -107,7 +107,7 @@ def parse(arg):
     result, month_df = platform.parse(month)
     match result:
         case ParseResult.OK:
-            print(f'{platform.name} parsed {month} ok')
+            #print(f'{platform.name} parsed {month} ok')
             month_df['platform'] = platform.name
             month_df['month'] = month.month
             month_df['year'] = month.year
@@ -139,6 +139,9 @@ if __name__ == "__main__":
     requested_months = months.copy()
     months = report.modify_months(months, platforms_str)
 
+    for platform in platforms:
+        platform.prepare(months)
+
     if download:
         jobs_download = []
         for platform in platforms:
@@ -153,6 +156,10 @@ if __name__ == "__main__":
             jobs_parse.append((platform, month))
     with mp.Pool(processes=4) as pool:
         results = pool.map(parse, jobs_parse)
+        for result in results:
+            if not isinstance(result, pd.DataFrame):
+                exit('one or more months had an error, stopping')
+
     df = pd.concat(results)
 
     if len(df.index) == 0:

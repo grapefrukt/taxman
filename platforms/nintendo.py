@@ -10,6 +10,9 @@ class PlatformNintendo(Platform):
     def download(self, month):
         pass
 
+    def prepare(self, month):
+        pass
+
     def _parse(self, month):
         cols = ['Title', 'Sales Units', 'Final Payable Amount']
         df = pd.read_csv(self.month_to_path(month), usecols=cols)
