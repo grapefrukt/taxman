@@ -16,7 +16,6 @@ class ReportForTaxes(Report):
 
         # figure out if this report has both google play pass and play store
         has_google = 'play-pass' in platforms and 'play-store' in platforms
-        print(platforms)
         if has_google:
             platforms.remove('play-pass')
             platforms.remove('play-store')
@@ -31,9 +30,12 @@ class ReportForTaxes(Report):
                     print(self.default(platform, month, df))
 
 
-    def default(self, platform, month, df: pd.DataFrame) -> str:
-        out = f'sales report for {platform} {month}\n\n'
-        out += 'PER TITLE (including charges, fees, taxes, and refunds):\n\n'
+    def default(self, platform, month, df: pd.DataFrame, header:bool=True) -> str:
+        out = ''
+        
+        if header:
+            out += f'sales report for {platform} {month}\n\n'
+            out += 'PER TITLE (including charges, fees, taxes, and refunds):\n\n'
 
         df = df.loc[
             (df['platform'] == platform) &
@@ -48,31 +50,29 @@ class ReportForTaxes(Report):
         # turn that into a dataframe (it was a series)
         df_sum = df.sum(numeric_only=True).to_frame().T
         # set the title of that row to something i can replace later
-        df_sum['title'] = '🌭'
+        df_sum['title'] = '¤'
         # and concat it with the other data
         df = pd.concat([df, df_sum], ignore_index=True)
-
-        # set the title as the index so it prints nicer
-        df = df.set_index('title')
 
         # convert the sek and units to the proper formats
         df['sek'] = df.apply(lambda row: self.format_currency(row['sek']), axis=1)
         df['units'] = df.apply(lambda row: self.format_units(row['units']), axis=1)
 
         # turn the dataframe into a string
-        df_str = str(df)
-        # now we replace that summary row marker with a newline to space it one line lower
-        df_str = df_str.replace('🌭', '\n\n ')
+        df_str = df.to_string(index=False)
 
-        out += df_str
+        # now we replace that summary row marker with a newline to space it one line lower
+        for line in df_str.splitlines():
+            if '¤' in line:
+                line = f'\n{line.replace('¤', ' ')}'
+            out += line + '\n'
+
         out += '\n\n'
         
         return out
 
     def google(self, month, df: pd.DataFrame) -> str:
-        print(month, 'google')
-
-        ps = self.default('play-store', month, df)
-        pp = self.default('play-pass', month.add_months(-1), df)
+        ps = self.default('play-store', month, df, header=False)
+        pp = self.default('play-pass', month.add_months(-1), df, header=False)
 
         return f'{ps}\n\n{pp}'

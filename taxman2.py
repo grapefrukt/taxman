@@ -134,6 +134,10 @@ if __name__ == "__main__":
     print(f"end:         {months[-1]}")
     print(f"month count: {len(months)}")
 
+    # add a bit here where the reports are allowed to modify the specified months
+    # i need this so i can offset the play-pass payments by a month without having 
+    # to add an extra padding month before each time
+
     if download:
         jobs_download = []
         for platform in platforms:
