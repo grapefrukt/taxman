@@ -22,11 +22,8 @@ class ReportForTaxes(Report):
 
         for platform in platforms:
             for month in months:
-                # now, if we have both google platforms, use a special function that merges them
-                if platform == 'google':
-                    print(self.google(month, df))
-                else:
-                    print(self.default(platform, month, df))
+                report, units, sek = self.report(platform, month, df)
+                print(report)
 
     def modify_months(self, months, platforms):
         if self.has_double_google(platforms):
@@ -34,7 +31,10 @@ class ReportForTaxes(Report):
             months.insert(0, months[0].add_months(-1))
         return months
 
-    def default(self, platform, month, df: pd.DataFrame, header:bool=True) -> str:
+    def report(self, platform, month, df: pd.DataFrame, header:bool=True):
+        if platform == 'google':
+            return self.google(month, df)
+
         out = ''
         
         if header:
@@ -53,41 +53,49 @@ class ReportForTaxes(Report):
         # calculate a sum for the numeric columns (units/sek)
         # turn that into a dataframe (it was a series)
         df_sum = df.sum(numeric_only=True).to_frame().T
-        # set the title of that row to something i can replace later
-        df_sum['title'] = '¤'
+        # set the title of that row as empty
+        df_sum['title'] = ''
         # and concat it with the other data
         df = pd.concat([df, df_sum], ignore_index=True)
 
-        # convert the sek and units to the proper formats
-        df['sek'] = df.apply(lambda row: self.format_currency(row['sek']), axis=1)
-        df['units'] = df.apply(lambda row: self.format_units(row['units']), axis=1)
+        out += self.report_row('title', 'units', 'sek')
+        for index, row in df.iterrows():
+            if row['title'] == '':
+                out += '\n'
+            out += self.report_row(row['title'], row['units'], row['sek'])
 
-        # turn the dataframe into a string
-        df_str = df.to_string(index=False)
+        out += '\n'
 
-        # now we replace that summary row marker with a newline to space it one line lower
-        for line in df_str.splitlines():
-            if '¤' in line:
-                line = f'\n{line.replace('¤', ' ')}'
-            out += line + '\n'
+        return out, df_sum['units'][0], df_sum['sek'][0]
 
-        out += '\n\n'
-        
-        return out
-
-    def google(self, month, df: pd.DataFrame) -> str:
+    def google(self, month, df: pd.DataFrame):
         offset_month = month.add_months(-1)
 
         out = ""
         out += f'sales report for play pass {offset_month} and play store {month}\n\n'
-        out += 'PER TITLE (including charges, fees, taxes, and refunds):\n\n'
 
-        out += 'play store\n'
-        out += self.default('play-store', month, df, header=False)
-        out += 'play pass\n'
-        out += self.default('play-pass', offset_month, df, header=False)
+        ps_report, ps_units, ps_sek = self.report('play-store', month, df, header=False)
+        pp_report, pp_units, pp_sek = self.report('play-pass', offset_month, df, header=False)
 
-        return out
+        out += f'{self.hr('play store')}{ps_report}\n'
+        out += f'{self.hr('play pass')}{pp_report}\n'
+
+        out += f'{self.hr('total')}'
+
+        out += f'{self.report_row('', ps_units + pp_units, ps_sek + pp_sek)}\n'
+
+        return out, ps_units + pp_units, ps_sek + pp_sek
 
     def has_double_google(self, platforms):
         return 'play-pass' in platforms and 'play-store' in platforms
+
+    def hr(self, title):
+        return f'- {title.upper()} {'-' * (55 - len(title))}\n'
+
+    def report_row(self, title, units, sek):
+        if not isinstance(units, str):
+            units = self.format_units(units)
+        if not isinstance(sek, str):
+            sek = self.format_currency_decimals(sek)
+
+        return f'{title:<28}{units:>10}{sek:>20}\n'
