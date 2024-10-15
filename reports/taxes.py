@@ -52,21 +52,18 @@ class ReportForTaxes(Report):
 
         # calculate a sum for the numeric columns (units/sek)
         # turn that into a dataframe (it was a series)
-        df_sum = df.sum(numeric_only=True).to_frame().T
-        # set the title of that row as empty
-        df_sum['title'] = ''
-        # and concat it with the other data
-        df = pd.concat([df, df_sum], ignore_index=True)
+        df_sum = df.sum(numeric_only=True)
 
-        out += self.report_row('title', 'units', 'sek')
+        out += self.report_row('title', 'units', 'revenue')
         for index, row in df.iterrows():
-            if row['title'] == '':
-                out += '\n'
             out += self.report_row(row['title'], row['units'], row['sek'])
 
         out += '\n'
+        out += self.report_row('', df_sum['units'], df_sum['sek'])
 
-        return out, df_sum['units'][0], df_sum['sek'][0]
+        out += '\n'
+
+        return out, df_sum['units'], df_sum['sek']
 
     def google(self, month, df: pd.DataFrame):
         offset_month = month.add_months(-1)
@@ -79,9 +76,7 @@ class ReportForTaxes(Report):
 
         out += f'{self.hr('play store')}{ps_report}\n'
         out += f'{self.hr('play pass')}{pp_report}\n'
-
         out += f'{self.hr('total')}'
-
         out += f'{self.report_row('', ps_units + pp_units, ps_sek + pp_sek)}\n'
 
         return out, ps_units + pp_units, ps_sek + pp_sek
