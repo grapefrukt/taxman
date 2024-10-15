@@ -136,7 +136,7 @@ if __name__ == "__main__":
     # make a list of the platforms as plain strings
     platforms_str = [str(p) for p in platforms]
 
-    requested_months = months
+    requested_months = months.copy()
     months = report.modify_months(months, platforms_str)
 
     if download:
@@ -157,7 +157,5 @@ if __name__ == "__main__":
 
     if len(df.index) == 0:
         exit('no rows in dataframe')
-
-
 
     report.generate(requested_months, platforms_str, df)
