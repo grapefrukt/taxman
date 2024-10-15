@@ -108,7 +108,7 @@ def parse(arg):
     result, month_df = platform.parse(month)
     match result:
         case ParseResult.OK:
-            print(f'{platform.name} parsed {month} ok')
+            #print(f'{platform.name} parsed {month} ok')
             month_df['platform'] = platform.name
             month_df['month'] = month.month
             month_df['year'] = month.year
@@ -152,21 +152,6 @@ if __name__ == "__main__":
         results = pool.map(parse, jobs_parse)
     df = pd.concat(results)
 
-    # df = df.groupby(['title', 'month'])
-    # df = df.agg({
-    #   'units':'sum',
-    #   'sek':'sum',
-    #   'platform': 'first',
-    # })
-    # df = df.reset_index()
-    # df = df.sort_values(by=['month', 'title'])
-
-    # df = df.groupby(['platform', 'title'])
-    # df = df.agg({
-    #   'units':'sum',
-    #   'sek':'sum',
-    # })
-
     if len(df.index) == 0:
         exit('no rows in dataframe')
 
@@ -174,5 +159,4 @@ if __name__ == "__main__":
     platforms_str = [str(p) for p in platforms]
 
     for report in reports:
-        result = report.generate(months, platforms_str, df)
-        print(result)
+        report.generate(months, platforms_str, df)

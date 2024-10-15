@@ -26,9 +26,9 @@ class ReportForTaxes(Report):
             for month in months:
                 # now, if we have both google platforms, use a special function that merges them
                 if platform == 'google':
-                    self.google(month, df)
+                    print(self.google(month, df))
                 else:
-                    self.default(platform, month, df)
+                    print(self.default(platform, month, df))
 
 
     def default(self, platform, month, df: pd.DataFrame) -> str:
@@ -67,10 +67,12 @@ class ReportForTaxes(Report):
         out += df_str
         out += '\n\n'
         
-        print(out)
-
-        return 'default'
+        return out
 
     def google(self, month, df: pd.DataFrame) -> str:
         print(month, 'google')
-        return 'google'
+
+        ps = self.default('play-store', month, df)
+        pp = self.default('play-pass', month.add_months(-1), df)
+
+        return f'{ps}\n\n{pp}'
