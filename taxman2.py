@@ -171,5 +171,5 @@ if __name__ == "__main__":
         exit('no rows in dataframe')
 
     for report in reports:
-        result = report.generate(df)
+        result = report.generate(months, platforms, df)
         print(result)
