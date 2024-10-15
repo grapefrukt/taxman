@@ -7,7 +7,7 @@ class Report(ABC):
         self.config = config
 
     @abstractmethod
-    def generate(self, df: pd.DataFrame) -> str:
+    def generate(self, months, platforms, df: pd.DataFrame) -> str:
         pass
 
     def format_currency(self, value) -> str:

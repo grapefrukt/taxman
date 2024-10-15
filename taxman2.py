@@ -170,6 +170,9 @@ if __name__ == "__main__":
     if len(df.index) == 0:
         exit('no rows in dataframe')
 
+    # make a list of the platforms as plain strings
+    platforms_str = [str(p) for p in platforms]
+
     for report in reports:
-        result = report.generate(months, platforms, df)
+        result = report.generate(months, platforms_str, df)
         print(result)
