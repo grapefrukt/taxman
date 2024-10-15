@@ -11,7 +11,7 @@ class PlatformPlayPass(Platform):
         pass
 
     def _parse(self, month):
-        cols = ['Start Date', 'Product Id', 'Amount (Merchant Currency)']
+        cols = ['Product Id', 'Amount (Merchant Currency)']
         df = pd.read_csv(self.month_to_path(month), usecols=cols)
         df['units'] = 0
 
@@ -22,6 +22,3 @@ class PlatformPlayPass(Platform):
         })
 
         return ParseResult.OK, df
-
-    def shorten_date(self, str) -> str:
-        return str[:7]
