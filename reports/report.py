@@ -11,10 +11,9 @@ class Report(ABC):
     @abstractmethod
     def name(self) -> str:
         pass
-
-    @abstractmethod
+    
     def modify_months(self, months, platforms):
-        pass
+        return months
 
     @abstractmethod
     def generate(self, months, platforms, df: pd.DataFrame) -> str:
