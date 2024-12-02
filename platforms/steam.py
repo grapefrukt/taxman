@@ -110,6 +110,8 @@ class PlatformSteam(Platform):
         return ParseResult.OK, df
 
     def strip_dollar_sign(self, str) -> float:
+        # months with no sales at all will have a - instead of a zero
+        if str == '-' : return 0
         return float(str.replace('$', '').replace(',', ''))
 
     def remove_package_id(self, str) -> str:
