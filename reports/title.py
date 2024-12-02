@@ -2,42 +2,37 @@ import pandas as pd
 from reports.report import *
 
 
-class ReportPlatform(Report):
+class ReportTitle(Report):
 
     @property
     def name(self) -> str:
-        return 'platform summary'
+        return 'title summary'
     
     def generate(self, months, platforms, df: pd.DataFrame) -> str:
-        df = df.groupby(['platform', 'year', 'month', 'title'])
+        df = df.groupby(['title', 'year', 'month', 'platform'])
         df = df.agg({
             'units': 'sum',
             'sek': 'sum',
         })
 
-        df = df.sort_values(['year', 'month', 'title'], ascending=True)
+        df = df.sort_values(['title'], ascending=True)
         df = df.reset_index()
 
-        print(df)
+        print(df.to_csv())
 
-    def report(self, platform, month, df: pd.DataFrame, header:bool=True):
-        if platform == 'google':
-            return self.google(month, df)
+        #df_titles = df['title'].unique()
+        #for title in df_titles:
+        #    print(self.report(title, df))
 
+    def report(self, title, df: pd.DataFrame):
         out = ''
         
-        if header:
-            out += f'sales report for {platform} {month}\n\n'
-            out += 'PER TITLE (including charges, fees, taxes, and refunds):\n\n'
+        out += f'sales report for {title}\n\n'
 
-        df = df.loc[
-            (df['platform'] == platform) &
-            (df['year'] == month.year) &
-            (df['month'] == month.month)
-            ]
+        df = df.loc[(df['title'] == title)]
 
         # drop any columns we don't need
-        df = df[['title', 'units', 'sek']]
+        df = df[['platform', 'units', 'sek']]
 
         # calculate a sum for the numeric columns (units/sek)
         # turn that into a dataframe (it was a series)
@@ -45,14 +40,14 @@ class ReportPlatform(Report):
 
         out += self.report_row('title', 'units', 'revenue')
         for index, row in df.iterrows():
-            out += self.report_row(row['title'], row['units'], row['sek'])
+            out += self.report_row(row['platform'], row['units'], row['sek'])
 
         out += '\n'
         out += self.report_row('', df_sum['units'], df_sum['sek'])
 
         out += '\n'
 
-        return out, df_sum['units'], df_sum['sek']
+        return out
 
     def hr(self, title):
         return f'- {title.upper()} {'-' * (55 - len(title))}\n'

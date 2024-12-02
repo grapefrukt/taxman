@@ -12,7 +12,7 @@ from platforms.steam import PlatformSteam
 
 from reports.report import *
 from reports.taxes import ReportForTaxes
-from reports.platform import ReportPlatform
+from reports.title import ReportTitle
 
 class TaxMan:
 
@@ -97,8 +97,8 @@ class TaxMan:
         match args.report:
             case 'taxes':
                 report = ReportForTaxes(config)
-            case 'platform':
-                report = ReportPlatform(config)
+            case 'title':
+                report = ReportTitle(config)
             case _:
                 raise ValueError(f'Unknown report: {report}')
 
