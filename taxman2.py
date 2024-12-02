@@ -11,7 +11,8 @@ from platforms.playstore import PlatformPlayStore
 from platforms.steam import PlatformSteam
 
 from reports.report import *
-from reports.taxes import ReportForTaxes 
+from reports.taxes import ReportForTaxes
+from reports.platform import ReportPlatform
 
 class TaxMan:
 
@@ -96,6 +97,8 @@ class TaxMan:
         match args.report:
             case 'taxes':
                 report = ReportForTaxes(config)
+            case 'platform':
+                report = ReportPlatform(config)
             case _:
                 raise ValueError(f'Unknown report: {report}')
 
