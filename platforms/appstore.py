@@ -15,7 +15,7 @@ class PlatformAppStore(Platform):
                 print("missing payment file")
             if not self.check_month_present(month, 'sales'):
                 if not self.has_sales_directory(month):
-                    print("missing both sales file and directory")
+                    print(f"missing sales file (and fallback sales directory) for {month}")
                     return False
             return True
         else:
