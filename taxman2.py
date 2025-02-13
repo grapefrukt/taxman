@@ -171,3 +171,5 @@ if __name__ == "__main__":
         exit('no rows in dataframe')
 
     report.generate(requested_months, platforms_str, df)
+
+    print(f'generated report using "{report.name}"')

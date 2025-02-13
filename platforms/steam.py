@@ -21,7 +21,7 @@ class PlatformSteam(Platform):
         pass
 
     def prepare(self, months):
-        print("preparing payments and statements")
+        #print("preparing payments and statements")
         # read the tsv and rename some columns
         usecols = ['Reporting Period', 'Payment Date', 'Net Payment']
         self.df_payments = pd.read_csv(self.file_to_path('payments.tsv'), sep='\t', usecols=usecols)
