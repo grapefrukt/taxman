@@ -1,6 +1,7 @@
 import argparse
 import multiprocessing as mp
 import yaml
+import pkgutil
 
 from taxmonth import TaxMonth
 from platforms.platform import *
@@ -73,35 +74,30 @@ class TaxMan:
         with open('config.yaml', 'r') as file:
             config = yaml.safe_load(file)
 
+        # use some fun reflection to get all the subclasses for platform and create objects from them
+        available_platforms = {}
+        for cls in Platform.__subclasses__():
+            o = cls(config)
+            available_platforms[o.name] = o
+        
         if not args.platforms:
-            raise ValueError('You must supply at least one --platform')
+            raise ValueError(f'You must supply at least one --platform, valid options are: {" ".join(available_platforms)}')
 
         # Get the platforms and create the corresponding classes
         platforms = []
-        for platform in args.platforms:
-            match platform:
-                case 'nintendo':
-                    platforms.append(PlatformNintendo(config)),
-                case 'play-pass':
-                    platforms.append(PlatformPlayPass(config)),
-                case 'play-store':
-                    platforms.append(PlatformPlayStore(config)),
-                case 'appstore':
-                    platforms.append(PlatformAppStore(config)),
-                case 'steam':
-                    platforms.append(PlatformSteam(config)),
-                case _:
-                    raise ValueError(f'Unknown platform: {platform}')
+        for name in args.platforms:
+            platforms.append(available_platforms[name])
 
-        report = None
-        match args.report:
-            case 'taxes':
-                report = ReportForTaxes(config)
-            case 'title':
-                report = ReportTitle(config)
-            case _:
-                raise ValueError(f'Unknown report: {report}')
+        # same reflection trick to get all report types
+        available_reports = {}
+        for cls in Report.__subclasses__():
+            o = cls(config)
+            available_reports[o.name] = o
 
+        if args.report not in available_reports: 
+            raise ValueError(f'Unknown report type: {args.report}, valid options are: {", ".join(available_reports)}')
+        report = available_reports[args.report]
+        
         return download, TaxMonth.make_range(start, end), platforms, report
 
 
@@ -126,11 +122,11 @@ def parse(arg):
 if __name__ == "__main__":
     taxman = TaxMan()
     download, months, platforms, report = (False, [], [], None)
-    try:
-        download, months, platforms, report = taxman.intialize()
-    except Exception as e:
-        print(e)
-        exit()
+    #try:
+    download, months, platforms, report = taxman.intialize()
+    #except Exception as e:
+    #    print(e)
+    #    exit()
 
     print(f"platforms:   {', '.join(map(str, platforms))}")
     print(f"download:    {str(download).lower()}")
