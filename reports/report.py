@@ -34,10 +34,10 @@ class Report(ABC):
             file.write(report)
 
     def format_currency_decimals(self, value) -> str:
-        return '{:16,.2f} SEK'.format(value).replace(',', ' ').replace('.', ',')
+        return '{:0,.2f} SEK'.format(value).replace(',', ' ').replace('.', ',')
 
     def format_currency(self, value) -> str:
-        return '{:16,.0f} SEK'.format(value).replace(',', ' ').replace('.', ',')
+        return '{:0,.0f} SEK'.format(value).replace(',', ' ').replace('.', ',')
 
     def format_units(self, value) -> str:
-        return '{:10,.0f}'.format(value).replace(',', ' ').replace('.', ',')
+        return '{:0,.0f}'.format(value).replace(',', ' ').replace('.', ',')
