@@ -80,13 +80,19 @@ class TaxMan:
             o = cls(config)
             available_platforms[o.name] = o
         
-        if not args.platforms:
-            raise ValueError(f'You must supply at least one --platform, valid options are: {" ".join(available_platforms)}')
-
         # Get the platforms and create the corresponding classes
         platforms = []
-        for name in args.platforms:
-            platforms.append(available_platforms[name])
+        if args.platforms :
+            for name in args.platforms:
+                if name not in available_platforms:
+                    raise ValueError(f'Unknown platform: {name}, valid options are: {" ".join(available_platforms)}')
+                platforms.append(available_platforms[name])
+
+        # no platform specified, use all of them
+        if len(platforms) == 0 :
+            print("no platform specified, using all")
+            for name in available_platforms.keys():
+                platforms.append(available_platforms[name])
 
         # same reflection trick to get all report types
         available_reports = {}
@@ -125,7 +131,7 @@ if __name__ == "__main__":
     #try:
     download, months, platforms, report = taxman.intialize()
     #except Exception as e:
-    #    print(e)
+    #    print(f"\033[91m{e}\033[0m")
     #    exit()
 
     print(f"platforms:   {', '.join(map(str, platforms))}")
