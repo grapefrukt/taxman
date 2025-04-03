@@ -6,7 +6,7 @@ class ReportTitle(Report):
 
     @property
     def name(self) -> str:
-        return 'title summary'
+        return 'title'
     
     def generate(self, months, platforms, df: pd.DataFrame) -> str:
         df = df.groupby(['title', 'year', 'month', 'platform'])
@@ -15,10 +15,10 @@ class ReportTitle(Report):
             'sek': 'sum',
         })
 
-        df = df.sort_values(['title'], ascending=True)
+        df = df.sort_values(['title', 'year', 'month'], ascending=True)
         df = df.reset_index()
 
-        print(df.to_csv())
+        print(df)
 
         #df_titles = df['title'].unique()
         #for title in df_titles:
