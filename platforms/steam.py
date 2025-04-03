@@ -52,6 +52,11 @@ class PlatformSteam(Platform):
         df_bank = df_bank.rename(columns={'date': 'receive date'})
         # and convert this column to be a datetime column so we can search it easier later
         df_bank['receive date'] = pd.to_datetime(df_bank['receive date'])
+
+        df_bank_dupes = df_bank[df_bank.duplicated(subset=['receive date'], keep=False)]
+        if len(df_bank_dupes) > 0 :
+            raise Exception(f"Steam: duplicated payment rows for \n{df_bank_dupes}")
+
         # and set the index because of reasons?
         df_bank.set_index('receive date', inplace=True)
 
