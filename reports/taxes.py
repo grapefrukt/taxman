@@ -26,7 +26,7 @@ class ReportForTaxes(Report):
 
         for platform in platforms:
             for month in months:
-                report, units, sek = self.report(platform, month, df)
+                report, units, sek = self.generate_month(platform, month, df)
                 self.write(month, platform, report)
 
     def modify_months(self, months, platforms):
@@ -35,7 +35,7 @@ class ReportForTaxes(Report):
             months.insert(0, months[0].add_months(-1))
         return months
 
-    def report(self, platform, month, df: pd.DataFrame, header:bool=True):
+    def generate_month(self, platform, month, df: pd.DataFrame, header:bool=True):
         if platform == 'google':
             return self.google(month, df)
 
@@ -75,8 +75,8 @@ class ReportForTaxes(Report):
         out = ""
         out += f'sales report for play pass {offset_month} and play store {month}\n\n'
 
-        ps_report, ps_units, ps_sek = self.report('play-store', month, df, header=False)
-        pp_report, pp_units, pp_sek = self.report('play-pass', offset_month, df, header=False)
+        ps_report, ps_units, ps_sek = self.generate_month('play-store', month, df, header=False)
+        pp_report, pp_units, pp_sek = self.generate_month('play-pass', offset_month, df, header=False)
 
         out += f'{self.hr('play store')}{ps_report}\n'
         out += f'{self.hr('play pass')}{pp_report}\n'
