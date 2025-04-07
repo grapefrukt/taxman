@@ -32,8 +32,6 @@ class TaxMan:
             '--platforms', '--platform', nargs='+', help='List of platforms')
         self.parser.add_argument(
             '--report', nargs='?', help='Report type to generate', default="taxes")
-        self.parser.add_argument(
-            '--download', help='Download sales data if missing', default=False)
 
     def intialize(self):
         args = self.parser.parse_args()
@@ -110,7 +108,7 @@ class TaxMan:
             raise ValueError(f'Unknown report type: {args.report}, valid options are: {", ".join(available_reports)}')
         report = available_reports[args.report]
         
-        return download, TaxMonth.make_range(start, end), platforms, report
+        return TaxMonth.make_range(start, end), platforms, report
 
 
 def parse(arg):
@@ -133,15 +131,14 @@ def parse(arg):
 
 if __name__ == "__main__":
     taxman = TaxMan()
-    download, months, platforms, report = (False, [], [], None)
+    months, platforms, report = ([], [], None)
     #try:
-    download, months, platforms, report = taxman.intialize()
+    months, platforms, report = taxman.intialize()
     #except Exception as e:
     #    print(f"\033[91m{e}\033[0m")
     #    exit()
 
     print(f"platforms:   {', '.join(map(str, platforms))}")
-    print(f"download:    {str(download).lower()}")
     print(f"start:       {months[0]}")
     print(f"end:         {months[-1]}")
     print(f"month count: {len(months)}")
@@ -154,14 +151,6 @@ if __name__ == "__main__":
 
     for platform in platforms:
         platform.prepare(months)
-
-    if download:
-        jobs_download = []
-        for platform in platforms:
-            for month in months:
-                result = jobs_download.append((platform, month))
-        with mp.Pool(processes=4) as pool:
-            results = pool.map(parse, jobs_download)
 
     jobs_parse = []
     for platform in platforms:

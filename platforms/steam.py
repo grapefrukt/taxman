@@ -17,9 +17,6 @@ class PlatformSteam(Platform):
     def data_extension(self) -> str:
         return '.htm'
 
-    def download(self, month):
-        pass
-
     def prepare(self, months):
         #print("preparing payments and statements")
         # read the tsv and rename some columns

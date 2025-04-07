@@ -7,9 +7,6 @@ class PlatformNintendo(Platform):
     def name(self) -> str:
         return 'nintendo'
 
-    def download(self, month):
-        pass
-
     def prepare(self, month):
         pass
 

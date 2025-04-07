@@ -7,9 +7,6 @@ class PlatformPlayPass(Platform):
     def name(self) -> str:
         return 'play-pass'
 
-    def download(self, month):
-        pass
-
     def prepare(self, month):
         pass
 

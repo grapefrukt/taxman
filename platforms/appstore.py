@@ -24,9 +24,6 @@ class PlatformAppStore(Platform):
     def check_month_excluded(self, month: TaxMonth, index=None) -> bool:
         return super().check_month_excluded(month, 'payment')
 
-    def download(self, month):
-        pass
-
     def prepare(self, month):
         pass
 

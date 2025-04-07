@@ -7,9 +7,6 @@ class PlatformPlayStore(Platform):
     def name(self) -> str:
         return 'play-store'
 
-    def download(self, month):
-        pass
-
     def prepare(self, month):
         pass
 

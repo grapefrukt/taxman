@@ -48,10 +48,6 @@ class Platform(ABC):
         return self.config['title_remap']
 
     @abstractmethod
-    def download(self, month: TaxMonth) -> ParseResult:
-        pass
-
-    @abstractmethod
     def prepare(self, months):
         pass
 
