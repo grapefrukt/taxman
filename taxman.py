@@ -31,7 +31,7 @@ class TaxMan:
         self.parser.add_argument(
             '--platforms', '--platform', nargs='+', help='List of platforms')
         self.parser.add_argument(
-            '--report', nargs='?', help='Report type to generate', default="taxes")
+            '--report', nargs='+', help='Report type to generate and its arguments', default=["taxes"])
 
     def intialize(self):
         args = self.parser.parse_args()
@@ -104,9 +104,11 @@ class TaxMan:
             o = cls(config)
             available_reports[o.name] = o
 
-        if args.report not in available_reports: 
+        if args.report[0] not in available_reports: 
             raise ValueError(f'Unknown report type: {args.report}, valid options are: {", ".join(available_reports)}')
-        report = available_reports[args.report]
+        
+        report = available_reports[args.report[0]]
+        report.set_arguments(args.report[1:])
         
         return TaxMonth.make_range(start, end), platforms, report
 

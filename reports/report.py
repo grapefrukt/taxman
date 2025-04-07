@@ -15,6 +15,9 @@ class Report(ABC):
     def modify_months(self, months, platforms):
         return months
 
+    def set_arguments(self, arguments):
+        self.arguments = arguments
+
     @abstractmethod
     def generate(self, months, platforms, df: pd.DataFrame) -> str:
         pass
