@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import multiprocessing as mp
 import yaml
 import pkgutil
@@ -53,12 +54,17 @@ class TaxMan:
 
         # Parse months
         has_months = args.months
-        months = args.months if has_months else 1
+        months = args.months if has_months else 3
         if months < 1:
             months = 1
 
         if not start and not end:
-            raise ValueError('You must supply a date (YYYY-MM) in either --start or --end (or both)')
+            print("no dates specified, ending on last month by default")
+            today = datetime.date.today() # get today
+            first = today.replace(day=1) # find first day of current month using today
+            last_month = first - datetime.timedelta(days=1) # back up one day to get last month
+            end = TaxMonth.from_datetime(last_month)
+            start = end.add_months(-months + 1)
         elif start and end and has_months:
             raise ValueError(
                 '--months makes no sense when start and end date was supplied.')
