@@ -1,7 +1,6 @@
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
-
 class TaxMonth:
     def __init__(self, year: int, month: int):
         self.date = date(year, month, 1)

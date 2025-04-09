@@ -2,7 +2,7 @@ import pandas as pd
 from reports.report import *
 
 
-class ReportTitle(Report):
+class ReportCustom(Report):
 
     @property
     def name(self) -> str:

@@ -5,6 +5,7 @@ import yaml
 import pkgutil
 
 from taxmonth import TaxMonth
+
 from platforms.platform import *
 from platforms.appstore import PlatformAppStore
 from platforms.nintendo import PlatformNintendo
@@ -14,7 +15,8 @@ from platforms.steam import PlatformSteam
 
 from reports.report import *
 from reports.taxes import ReportForTaxes
-from reports.title import ReportTitle
+from reports.custom import ReportCustom
+from reports.revshare import ReportRevshare
 
 class TaxMan:
 

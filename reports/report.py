@@ -37,9 +37,11 @@ class Report(ABC):
             file.write(report)
 
     def format_currency_decimals(self, value) -> str:
+        if value == '' : return ''
         return '{:0,.2f} SEK'.format(value).replace(',', ' ').replace('.', ',')
 
     def format_currency(self, value) -> str:
+        if value == '' : return ''
         return '{:0,.0f} SEK'.format(value).replace(',', ' ').replace('.', ',')
 
     def format_units(self, value) -> str:
