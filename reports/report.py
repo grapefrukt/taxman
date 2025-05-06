@@ -19,7 +19,7 @@ class Report(ABC):
         self.arguments = arguments
 
     @abstractmethod
-    def generate(self, months, platforms, df: pd.DataFrame) -> str:
+    def generate(self, months, platforms, df: pd.DataFrame):
         pass
 
     @property

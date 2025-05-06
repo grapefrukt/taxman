@@ -8,7 +8,7 @@ class ReportCustom(Report):
     def name(self) -> str:
         return 'custom'
     
-    def generate(self, months, platforms, df: pd.DataFrame) -> str:
+    def generate(self, months, platforms, df: pd.DataFrame):
         df = df.groupby(self.arguments)
         df = df.agg({
             'units': 'sum',

@@ -9,7 +9,7 @@ class ReportRevshare(Report):
     def name(self) -> str:
         return 'revshare'
     
-    def generate(self, months, platforms, df: pd.DataFrame) -> str:
+    def generate(self, months, platforms, df: pd.DataFrame):
         pd.set_option('display.max_rows', 500)
         pd.set_option('future.no_silent_downcasting', True)
 
