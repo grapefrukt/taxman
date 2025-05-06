@@ -30,8 +30,10 @@ class Report(ABC):
         # make sure output folder exists
         directory = f'{self.data_path}'
         os.makedirs(directory, exist_ok=True)
-        directory = f'{directory}/{platform}'
-        os.makedirs(directory, exist_ok=True)
+        
+        if platform != '' :
+            directory = f'{directory}/{platform}'
+            os.makedirs(directory, exist_ok=True)
 
         with open(f"{directory}/{month}.txt", "w") as file:
             file.write(report)
