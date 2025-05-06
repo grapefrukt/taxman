@@ -43,8 +43,9 @@ class ReportRevshare(Report):
 
         print(df)
 
-    def percentage(self, title) :
+        self.write(f'{months[0]} to {months[-1]}', '', df.to_csv())
 
+    def percentage(self, title) :
         return self.revshare_map[title]
         
     def revshare(self, row) :

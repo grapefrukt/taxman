@@ -8,7 +8,7 @@ class ReportForTaxes(Report):
     def name(self) -> str:
         return 'taxes'
     
-    def generate(self, months, platforms, df: pd.DataFrame) -> str:
+    def generate(self, months, platforms, df: pd.DataFrame):
         df = df.groupby(['platform', 'year', 'month', 'title'])
         df = df.agg({
             'units': 'sum',
