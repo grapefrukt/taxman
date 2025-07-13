@@ -95,7 +95,7 @@ class PlatformAppStore(Platform):
         # despite having no sales in brazil that month
         df_brazil = df_exchange.loc[(df_exchange['earned'] == 0) & (df_exchange['sek'] < 0)]
         if not df_brazil.empty:
-            print(f'fixing mysterious brazil tax for {month}')
+            print(f'{self.name}: fixing brazil tax for {month}')
             df_brazil = df_brazil.to_dict(orient='index')['BRL']
             df_sales.loc[len(df_sales)] = ['Brazil Sales Tax', 1, df_brazil['sek'], 'SEK']
 
@@ -114,7 +114,7 @@ class PlatformAppStore(Platform):
 
         # use the payout lookup to work out how much each game earned in each currency
         df_sales['sek'] = df_sales.apply(
-            lambda row: self.exchange_rate(row, df_exchange), axis=1)
+            lambda row: self.exchange_rate(row, df_exchange, month), axis=1)
 
         # check if the game has any entries with non-zero sales that still made no money.
         # this happens if we don't have the exchange rate for that currency for this month.
@@ -137,7 +137,7 @@ class PlatformAppStore(Platform):
 
         return ParseResult.OK, df_sales
 
-    def exchange_rate(self, row, df_payout):
+    def exchange_rate(self, row, df_payout, month):
         # if something is sold in a currency and then all of it is returned
         # that currency will be in the sales table, but not in the payout table
         # (because that currency never got paid out)
@@ -147,7 +147,7 @@ class PlatformAppStore(Platform):
             return 0
 
         if not row['currency'] in df_payout.index:
-            print(f"missing exchange data for {row['currency']}, {row['earned']}")
+            print(f"{self.name}: missing exchange data, currency: {row['currency']}, amount: {row['earned']} for {month}")
             return 0
 
         # because this is an approximate value, we have to round it off here

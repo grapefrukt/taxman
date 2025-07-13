@@ -126,7 +126,7 @@ def parse(arg):
             month_df['year'] = month.year
             return month_df
         case ParseResult.EXCLUDED:
-            print(f'{platform.name} excluded {month}')
+            print(f'{platform.name}: excluded {month}')
             return pd.DataFrame()
         case ParseResult.MISSING:
             print(f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
