@@ -45,6 +45,8 @@ class Platform(ABC):
         return self.config['title_remap']
 
     def prepare(self, months):
+        if self.exclude_before is None :
+            return
         for month in months:
             if self.exclude_before.is_after(month):
                 print(f'{self.name} exludes everything before: {self.exclude_before} (not inclusive)')
