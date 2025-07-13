@@ -5,8 +5,8 @@ import re
 
 
 class PlatformSteam(Platform):
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, config, start, end):
+        super().__init__(config, start, end)
         self.df_payments = None
 
     @property

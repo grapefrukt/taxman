@@ -17,16 +17,16 @@ class ParseResult(Enum):
 
 
 class Platform(ABC):
-    def __init__(self, config):
+    def __init__(self, config, start, end):
         self.config = config
         try:
             self.exclude_before = TaxMonth.from_string(self.config[self.name]['exclude_before'])
         except KeyError:
             self.exclude_before = None
 
-        if self.exclude_before is not None:
+        if self.exclude_before is not None and start.is_before(self.exclude_before):
             print(f'{self.name} exludes everything before: {self.exclude_before} (not inclusive)')
-
+            
     def __str__(self):
         return self.name
 
