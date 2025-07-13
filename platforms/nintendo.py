@@ -7,9 +7,6 @@ class PlatformNintendo(Platform):
     def name(self) -> str:
         return 'nintendo'
 
-    def prepare(self, month):
-        pass
-
     def _parse(self, month):
         cols = ['Title', 'Sales Units', 'Final Payable Amount']
         df = pd.read_csv(self.month_to_path(month), usecols=cols)

@@ -5,8 +5,8 @@ import re
 
 
 class PlatformSteam(Platform):
-    def __init__(self, config, start, end):
-        super().__init__(config, start, end)
+    def __init__(self, config):
+        super().__init__(config)
         self.df_payments = None
 
     @property
@@ -18,6 +18,8 @@ class PlatformSteam(Platform):
         return '.htm'
 
     def prepare(self, months):
+        super().prepare(months)
+        
         #print("preparing payments and statements")
         # read the tsv and rename some columns
         usecols = ['Reporting Period', 'Payment Date', 'Net Payment']

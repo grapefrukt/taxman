@@ -7,9 +7,6 @@ class PlatformPlayStore(Platform):
     def name(self) -> str:
         return 'play-store'
 
-    def prepare(self, month):
-        pass
-
     def _parse(self, month):
         df = pd.DataFrame()
 

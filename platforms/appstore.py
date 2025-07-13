@@ -24,9 +24,6 @@ class PlatformAppStore(Platform):
     def check_month_excluded(self, month: TaxMonth, index=None) -> bool:
         return super().check_month_excluded(month, 'payment')
 
-    def prepare(self, month):
-        pass
-
     def _parse(self, month):
         csv_payment = self.preprocess_payment(self.month_to_path(month, 'payment'))
         io_payment = StringIO(csv_payment)

@@ -18,6 +18,9 @@ class TaxMonth:
     def is_before(self, other):
         return self.date < other.date
 
+    def __eq__(self, other):
+        return self.equals(other)
+
     @property
     def year(self):
         return self.date.year

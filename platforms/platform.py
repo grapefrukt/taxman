@@ -17,15 +17,12 @@ class ParseResult(Enum):
 
 
 class Platform(ABC):
-    def __init__(self, config, start, end):
+    def __init__(self, config):
         self.config = config
         try:
             self.exclude_before = TaxMonth.from_string(self.config[self.name]['exclude_before'])
         except KeyError:
             self.exclude_before = None
-
-        if self.exclude_before is not None and start.is_before(self.exclude_before):
-            print(f'{self.name} exludes everything before: {self.exclude_before} (not inclusive)')
             
     def __str__(self):
         return self.name
@@ -47,9 +44,11 @@ class Platform(ABC):
     def title_remap(self) -> str:
         return self.config['title_remap']
 
-    @abstractmethod
     def prepare(self, months):
-        pass
+        for month in months:
+            if self.exclude_before.is_after(month):
+                print(f'{self.name} exludes everything before: {self.exclude_before} (not inclusive)')
+                return
 
     def parse(self, month: TaxMonth) -> (ParseResult, pd.DataFrame):
         if self.check_month_excluded(month):

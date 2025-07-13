@@ -83,7 +83,7 @@ class TaxMan:
         # use some fun reflection to get all the subclasses for platform and create objects from them
         available_platforms = {}
         for cls in Platform.__subclasses__():
-            o = cls(config, start, end)
+            o = cls(config)
             available_platforms[o.name] = o
         
         # Get the platforms and create the corresponding classes
