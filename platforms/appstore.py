@@ -91,6 +91,14 @@ class PlatformAppStore(Platform):
         # remap the game titles
         df_sales = df_sales.replace({'title': self.title_remap})
 
+        # sometimes there's a mismatch on the brazil tax that causes me to "lose" money to it 
+        # despite having no sales in brazil that month
+        df_brazil = df_exchange.loc[(df_exchange['earned'] == 0) & (df_exchange['sek'] < 0)]
+        if not df_brazil.empty:
+            print(f'fixing mysterious brazil tax for {month}')
+            df_brazil = df_brazil.to_dict(orient='index')['BRL']
+            df_sales.loc[len(df_sales)] = ['Brazil Sales Tax', 1, df_brazil['sek'], 'SEK']
+
         # now we summarize the units and earnings per game per currency
         # we have to do it beforehand, because they may be cases where all sales for a currency were returned
         # in that case, the returned currency won't be in our lookup table and we'll have errors
