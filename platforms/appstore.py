@@ -97,7 +97,7 @@ class PlatformAppStore(Platform):
         if not df_brazil.empty:
             print(f'{self.name}: fixing brazil tax for {month}')
             df_brazil = df_brazil.to_dict(orient='index')['BRL']
-            df_sales.loc[len(df_sales)] = ['Brazil Sales Tax', 1, df_brazil['sek'], 'SEK']
+            df_sales.loc[len(df_sales)] = ['brazil withholding tax', 1, df_brazil['sek'], 'SEK']
 
         # now we summarize the units and earnings per game per currency
         # we have to do it beforehand, because they may be cases where all sales for a currency were returned
