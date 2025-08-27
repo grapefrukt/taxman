@@ -18,12 +18,14 @@ class ReportRevshare(Report):
         
         df = df.sort_values(self.arguments, ascending=True)
         df = df.reset_index()
+
+        df = df[~df.title.str.contains('brazil withholding tax')]
+        df = df[~df.title.str.contains('taiwan withholding tax')]
         
-        table = pd.pivot_table(df, values=['sek'], index=['year', 'month', 'title'], columns=['platform'], aggfunc='sum', fill_value=0) #, margins=True, margins_name='sum')
+        table = pd.pivot_table(df, values=['sek'], index=['year', 'month', 'title'], columns=['platform'], aggfunc='sum', fill_value=0)
         df = table.reset_index()
 
         df['percentage'] = df['title'].map(self.percentage)
-
         df['revshare'] = df.apply(self.revshare, axis=1)
 
         cols_to_sum = []
@@ -39,7 +41,7 @@ class ReportRevshare(Report):
             df.at['total', col] = df[col].sum()
             df[col] = df[col].map(lambda a: self.format_currency(a))
 
-        df.loc['total'] = df.loc['total'].fillna('')        
+        df.loc['total'] = df.loc['total'].fillna('')
 
         print(df)
 
