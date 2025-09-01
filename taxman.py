@@ -34,6 +34,8 @@ class TaxMan:
             '--platforms', '--platform', nargs='+', help='List of platforms')
         self.parser.add_argument(
             '--report', nargs='+', help='Report type to generate and its arguments', default=["taxes"])
+        self.parser.add_argument(
+            '--verbose', help='Activate verbose mode', action='store_true')
 
     def intialize(self):
         args = self.parser.parse_args()
@@ -112,11 +114,11 @@ class TaxMan:
         report = available_reports[args.report[0]]
         report.set_arguments(args.report[1:])
         
-        return TaxMonth.make_range(start, end), platforms, report
+        return TaxMonth.make_range(start, end), platforms, report, args.verbose
 
 
 def parse(arg):
-    platform, month = arg
+    platform, month, verbose = arg
     result, month_df = platform.parse(month)
     match result:
         case ParseResult.OK:
@@ -126,10 +128,10 @@ def parse(arg):
             month_df['year'] = month.year
             return month_df
         case ParseResult.EXCLUDED:
-            print(f'{platform.name}: excluded {month}')
+            if verbose: print(f'{platform.name}: excluded {month}')
             return pd.DataFrame()
         case ParseResult.MISSING:
-            print(f'{platform.name} is missing {month}, expected at: {platform.month_to_path(month)}')
+            print(f'{platform.name}: missing {month}, expected at: {platform.month_to_path(month)}')
             return None
 
 
@@ -137,7 +139,7 @@ if __name__ == "__main__":
     taxman = TaxMan()
     months, platforms, report = ([], [], None)
     #try:
-    months, platforms, report = taxman.intialize()
+    months, platforms, report, verbose = taxman.intialize()
     #except Exception as e:
     #    print(f"\033[91m{e}\033[0m")
     #    exit()
@@ -159,7 +161,7 @@ if __name__ == "__main__":
     jobs_parse = []
     for platform in platforms:
         for month in months:
-            jobs_parse.append((platform, month))
+            jobs_parse.append((platform, month, verbose))
     with mp.Pool(processes=4) as pool:
         results = pool.map(parse, jobs_parse)
         for result in results:

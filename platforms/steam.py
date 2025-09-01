@@ -106,7 +106,7 @@ class PlatformSteam(Platform):
         try:
             exchange_rate = float(self.df_payments[self.df_payments['month'].str.contains(str(month))]['exchange rate'].iloc[0])
         except Exception as e:
-            print(f'missing steam payment data for {month}')
+            print(f'{self.name}: missing payment data for {month}')
             return ParseResult.MISSING, df
         
         df['sek'] = df['usd'] * exchange_rate
