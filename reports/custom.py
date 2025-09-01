@@ -9,6 +9,8 @@ class ReportCustom(Report):
         return 'custom'
     
     def generate(self, months, platforms, df: pd.DataFrame):
+        pd.set_option('future.no_silent_downcasting', True)
+
         df = df.groupby(self.arguments)
         df = df.agg({
             'units': 'sum',
@@ -25,3 +27,5 @@ class ReportCustom(Report):
         df['sek'] = df['sek'].map(lambda a: self.format_currency_decimals(a))
 
         print(df)
+
+        self.write(f'custom report for {months[0]} to {months[-1]}, {self.arguments}', '', df.to_csv())
