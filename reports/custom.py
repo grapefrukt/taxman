@@ -11,6 +11,9 @@ class ReportCustom(Report):
     def generate(self, months, platforms, df: pd.DataFrame):
         pd.set_option('future.no_silent_downcasting', True)
 
+        df = df[~df.title.str.contains('brazil withholding tax')]
+        df = df[~df.title.str.contains('taiwan withholding tax')]
+
         df = df.groupby(self.arguments)
         df = df.agg({
             'units': 'sum',
