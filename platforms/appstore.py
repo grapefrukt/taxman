@@ -25,7 +25,7 @@ class PlatformAppStore(Platform):
         return super().check_month_excluded(month, 'payment')
 
     def _parse(self, month):
-        csv_payment = self.preprocess_payment(self.month_to_path(month, 'payment'))
+        csv_payment = self.preprocess_payment(self.month_to_path(month, 'payment'), month)
         io_payment = StringIO(csv_payment)
 
         # because some fields have changed names, we need to read them all
@@ -172,21 +172,41 @@ class PlatformAppStore(Platform):
         # we can then use that to do an educated guess as to what this was worth
         return row['units'] * average_price
 
-    def preprocess_payment(self, path) -> str:
+    def preprocess_payment(self, path, month) -> str:
         processed = ''
         line_count = -1
+        end_of_data = False
+
+        # because i'm trying to support files going back as far as 2013 the format isn't perfectly consistent
+        # this function cleans up the csv before we feed it into pandas
+
         with open(path, 'r', encoding='utf8') as file:
             for line in file:
                 line_count += 1
-                # skip the first two lines, they're not interesting
+                # skip the first two lines, it's a header we don't need
                 if line_count < 2:
                     continue
+
                 # some files are inexplicably tab separated, luckily it's easily fixed here
                 line = line.replace('\t', ',')
-                # once we reach an "empty" line, we bail
-                # empty line is all commas and possibly some whitespace (always a newline)
-                if line.replace(',', '').rstrip() == '':
+
+                # remove all separators so we can test for some special rows
+                collapsed = line.replace(',', '').rstrip()
+
+                # once we reach an "empty" line, we stop reading data, the table is completed
+                if collapsed == '':
+                    end_of_data = True
+                # if the line starts with "Paid to" we know a payment has been made and can end the processing immediately
+                elif collapsed.startswith('Paid to '):
                     break
+                # if the file has the phrase "Estimated Proceeds" it's an estimated report, issue a warning
+                # sometimes a payment report will have both a "Paid to" and an "Estimated Proceeds", in my data, the latter is then always zero
+                # this seems to be related to withholding tax maybe?
+                elif collapsed == 'Estimated Proceeds':
+                    print(f'{self.name}: warning: estimated proceeds for {month}')
+
+                if end_of_data: 
+                    continue
                 processed += line
 
         return processed
