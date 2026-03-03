@@ -31,4 +31,4 @@ class ReportCustom(Report):
 
         print(df)
 
-        self.write(f'custom report for {months[0]} to {months[-1]}, {self.arguments}', '', df.to_csv())
+        self.write(f'custom report for {months[0]} to {months[-1]}, {', '.join(self.arguments)}', '', df.to_csv())
