@@ -63,7 +63,7 @@ class Platform(ABC):
     def _parse(self, month: TaxMonth) -> (ParseResult, pd.DataFrame):
         pass
 
-    # if index is -1 we check all files that will be needed for this mont
+    # if index is -1 we check all files that will be needed for this month
     # if index is 0 we check the first file and so on
     # for most platforms except appstore, we need one or sometimes more files
     # for appstore we always need two
