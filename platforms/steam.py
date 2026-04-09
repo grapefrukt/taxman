@@ -19,6 +19,14 @@ class PlatformSteam(Platform):
 
     def prepare(self, months):
         super().prepare(months)
+
+        # steam has no way of getting a currency conversion. 
+        # the way i handle this is to keep a list of what steam paid for any given month (payments.tsv) 
+        # and another one list of what ended up in my bank account (bank_statement.tsv)
+
+        # the payout data is technically available in all the reports as well, but only the last 13 months
+        # so to avoid having to do a bunch of extra parsing of files that may or may not be there, 
+        # so while redundant, it seemed simpler to keep a list of payments as well
         
         #print("preparing payments and statements")
         # read the tsv and rename some columns
@@ -31,19 +39,30 @@ class PlatformSteam(Platform):
         })
 
         # convert some column datatypes to what we need
-        self.df_payments['send date'] = pd.to_datetime(self.df_payments['send date'])
         self.df_payments['month'] = self.df_payments['month'].apply(self.format_date)
         self.df_payments['usd'] = self.df_payments['usd'].apply(self.strip_dollar_sign)
+        # because of reasons i do not understand, any months that do not have a payment yet (because below threshold)
+        # and thus does not have a send date, will come back as NaN instead of an empty string, we need to convert those
+        self.df_payments = self.df_payments.fillna('')
+
+        # earlier i converted the send date to a datetime here, but the groupby will ignore anything that's NaN
+        # so i have to wait with that until after the groupby
 
         # because months and payments do not match 1 to 1, we need to group by the send date
         # that will give us a sum that matches up with the bank statement entry, this is because
         # some months will not reach the payment threshold and will not pay out until next month
         self.df_payments = self.df_payments.groupby(['send date'])
+
         # we summarize the usd column, the month column will be merged (with spaces)
         # to contain all months it had payments for
         self.df_payments = self.df_payments.agg({'usd': 'sum', 'month': ' '.join})
         # then we need to reset the index to turn this back into a regular dataframe
         self.df_payments = self.df_payments.reset_index()
+        self.df_payments = self.df_payments.sort_values(by=["month"])
+        self.df_payments = self.df_payments.set_index('month')
+
+        # now we can turn the send date into an actual date
+        self.df_payments['send date'] = pd.to_datetime(self.df_payments['send date'])
 
         # now we read in the bank statement
         df_bank = pd.read_csv(self.file_to_path('bank_statement.tsv'), sep='\t')
@@ -54,7 +73,7 @@ class PlatformSteam(Platform):
 
         df_bank_dupes = df_bank[df_bank.duplicated(subset=['receive date'], keep=False)]
         if len(df_bank_dupes) > 0 :
-            raise Exception(f"Steam: duplicated payment rows for \n{df_bank_dupes}")
+            raise Exception(f"{self.name}: duplicated payment rows for \n{df_bank_dupes}")
 
         # and set the index because of reasons?
         df_bank.set_index('receive date', inplace=True)
@@ -104,7 +123,14 @@ class PlatformSteam(Platform):
 
         exchange_rate = 0
         try:
-            exchange_rate = float(self.df_payments[self.df_payments['month'].str.contains(str(month))]['exchange rate'].iloc[0])
+            exchange_rate = self.get_exchange_rate(month)
+            if exchange_rate <= 0 :
+                old_rate = exchange_rate
+                exchange_rate = self.get_exchange_rate(month.add_months(-1))
+                print(f'{self.name}: exchange rate for {month} is zero (or smaller): {old_rate:.2f}, using previous months exchange rate as a placeholder: {exchange_rate:.2f}')
+                if exchange_rate <= 0 :
+                    raise Exception(f'{self.name}: fallback conversion rate month was also zero')
+                
         except Exception as e:
             print(f'{self.name}: missing payment data for {month}')
             return ParseResult.MISSING, df
@@ -112,6 +138,10 @@ class PlatformSteam(Platform):
         df['sek'] = df['usd'] * exchange_rate
 
         return ParseResult.OK, df
+
+    def get_exchange_rate(self, month) -> float:
+        # the month field is the index here, hence the slightly obtuse search method
+        return float(self.df_payments[self.df_payments.index.str.contains(str(month))]['exchange rate'].iloc[0])
 
     def strip_dollar_sign(self, str) -> float:
         # months with no sales at all will have a - instead of a zero
@@ -125,8 +155,13 @@ class PlatformSteam(Platform):
         return datetime.strptime(str, '%B %Y').strftime('%Y-%m')
 
     def find_in_bank_statement(self, row, df_bank):
+        if pd.isnull(row['send date']): 
+            print(f"{self.name}: payment send date for month {row.name} is not a datetime: {row['send date']} (this usually happens due to missing payments because below payout threshold)")
+            return 0
+
         # convert the send date to be a datetime
         send_date = row['send date'].to_pydatetime()
+
         # find the index to the row in the bank statement data frame that is nearest our send date
         # this may not be close at all, depending on what data is in the bank statement table!
         iloc_idx = df_bank.index.get_indexer([row['send date']], method='nearest')
@@ -140,10 +175,10 @@ class PlatformSteam(Platform):
 
         #  do some sanity checks on this delta
         if abs(delta) > 10:
-            raise Exception(f"Steam: No received payment found for {send_date:%Y-%m-%d}, best candidate was {receive_date:%Y-%m-%d} and that's {delta} days away")
+            raise Exception(f'{self.name}: No received payment found for {send_date:%Y-%m-%d}, best candidate was {receive_date:%Y-%m-%d} and that\'s {delta} days away')
         if delta < 0:
-            raise Exception(f'Steam: Payment received before it was sent! sent on: {send_date:%Y-%m-%d}, received on: {receive_date:%Y-%m-%d}')
+            raise Exception(f'{self.name}: Payment received before it was sent! sent on: {send_date:%Y-%m-%d}, received on: {receive_date:%Y-%m-%d}')
 
-        # print(f"looking for {send_date:%Y-%m-%d}, found {receive_date:%Y-%m-%d}, delta: {delta}")
+        #print(f"looking for {send_date:%Y-%m-%d}, found {receive_date:%Y-%m-%d}, delta: {delta}")
 
         return float(sek)
