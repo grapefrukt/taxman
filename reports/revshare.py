@@ -10,6 +10,10 @@ class ReportRevshare(Report):
         return 'revshare'
     
     def generate(self, months, platforms, df: pd.DataFrame):
+
+        if self.config['steam']['exclude_soundtrack']:
+            raise Exception(f'{self.name}: exclude_soundtrack flag is set for a revshare report!')
+
         pd.set_option('display.max_rows', 500)
         pd.set_option('future.no_silent_downcasting', True)
 
