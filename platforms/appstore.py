@@ -12,11 +12,11 @@ class PlatformAppStore(Platform):
     def check_month_present(self, month: TaxMonth, index=None) -> bool:
         if index is None:
             if not self.check_month_present(month, 'payment'):
-                print(f'{self.name}: missing payment file for {month}')
-            if not self.check_month_present(month, 'sales'):
-                if not self.has_sales_directory(month):
-                    print(f"{self.name}: missing sales file (and fallback sales directory) for {month}")
-                    return False
+                print(f'{self.name}: missing payment file for {month}, expected at: {self.month_to_path(month, 'payment')}')
+                return False
+            if not self.check_month_present(month, 'sales') and not self.has_sales_directory(month):
+                print(f'{self.name}: missing sales file (and fallback sales directory) for {month}, expected at: {self.month_to_path(month, 'sales')}')
+                return False
             return True
         else:
             return super().check_month_present(month, index)

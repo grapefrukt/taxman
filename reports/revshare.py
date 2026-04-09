@@ -43,7 +43,7 @@ class ReportRevshare(Report):
 
         df.loc['total'] = df.loc['total'].fillna('')
 
-        print(df)
+        print(df.to_csv())
 
         self.write(f'{months[0]} to {months[-1]}', '', df.to_csv())
 
@@ -60,7 +60,7 @@ class ReportRevshare(Report):
     def format_currency(self, value) -> str:
         if value == '' : return ''
         if value == 0 : return ''
-        return '{:0,.0f} kr'.format(value).replace(',', ' ').replace('.', ',')
+        return '{:0,.0f}'.format(value).replace(',', '').replace('.', ',')
 
     def format_percent(self, value) -> str:
         if value == '' : return ''
